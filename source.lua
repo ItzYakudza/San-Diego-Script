@@ -1933,11 +1933,6 @@ function Picon.new(opts)
 		Visible = false,
 	}, {
 		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 14) }),
-		New("UIStroke", {
-			Color = Picon.Theme.Accent,
-			Thickness = 2,
-			Transparency = math.clamp(winTransparency * 0.5, 0, 0.3),
-		}),
 	})
 	miniBtn.Parent = root
 	PopulateButtonVisual(miniBtn, {
