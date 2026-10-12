@@ -1145,7 +1145,7 @@ end
 
 function Container:AddKeybind(opts)
 	opts = opts or {}
-	local current = opts.Default or Enum.KeyCode
+	local current = opts.Default or Enum.KeyCode.Unknown
 	if opts.Flag and typeof(Picon.GetFlag(opts.Flag)) == "EnumItem" then
 		current = Picon.GetFlag(opts.Flag)
 	end
@@ -1933,15 +1933,23 @@ function Picon.new(opts)
 		Visible = false,
 	}, {
 		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 14) }),
+		New("UIStroke", {
+			Color = Picon.Theme.Accent,
+			Thickness = 2,
+			Transparency = math.clamp(winTransparency * 0.5, 0, 0.3),
+		}),
 	})
 	miniBtn.Parent = root
+	-- TextSize / IconSize подстраиваются под размер mini-кнопки
+	local autoTextSize = math.clamp(math.floor(math.min(miniSize.X, miniSize.Y) * 0.42), 10, 22)
+	local autoIcon = math.max(math.floor(math.min(miniSize.X, miniSize.Y) - 12), 12)
 	PopulateButtonVisual(miniBtn, {
 		Text = miniOpts.Text or ((miniOpts.Icon == nil) and "☰" or nil),
 		Icon = miniOpts.Icon,
-		IconSize = miniOpts.IconSize,
-		TextSize = miniOpts.TextSize or 22,
+		IconSize = miniOpts.IconSize or Vector2.new(autoIcon, autoIcon),
+		TextSize = miniOpts.TextSize or autoTextSize,
 		TextColor = miniOpts.TextColor or Picon.Theme.Text,
-		Spacing = miniOpts.Spacing,
+		Spacing = miniOpts.Spacing or 4,
 	}, miniSize)
 	miniBtn.MouseEnter:Connect(function()
 		Tween(miniBtn, TweenInfo.new(0.15), {
