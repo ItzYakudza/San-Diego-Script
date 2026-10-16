@@ -2562,6 +2562,7 @@ function Picon.new(opts)
 		Visible = false,
 	}, {
 		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 6) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	miniBtn.Parent = root
 	ApplyButtonGradient(miniBtn, miniColor, "secondary")
