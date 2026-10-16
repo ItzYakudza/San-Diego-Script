@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.11.3  (Neverlose-style)
+	Picon UI Library  v2.11.4  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -23,7 +23,7 @@
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.11.3"
+Picon.Version = "2.11.4"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -154,6 +154,7 @@ end
 local function ApplyThemeToInstance(root)
 	if not root then return end
 	local function paint(d)
+		if d:GetAttribute("PiconNoTheme") then return end
 		local role = d:GetAttribute("PiconRole")
 		if not role then return end
 		if role == "Background" and d:IsA("GuiObject") then
@@ -413,13 +414,16 @@ end
 RefreshGradients = function(root)
 	if not root then return end
 	local list = {}
-	if root:IsA("GuiObject") then
+	if root:IsA("GuiObject") and not root:GetAttribute("PiconNoTheme") then
 		local g = root:FindFirstChild("_PiconGrad")
 		if g and g:IsA("UIGradient") then table.insert(list, { parent = root, grad = g }) end
 	end
 	for _, d in ipairs(root:GetDescendants()) do
 		if d:IsA("UIGradient") and d.Name == "_PiconGrad" then
-			table.insert(list, { parent = d.Parent, grad = d })
+			local p = d.Parent
+			if p and not p:GetAttribute("PiconNoTheme") then
+				table.insert(list, { parent = p, grad = d })
+			end
 		end
 	end
 	for _, item in ipairs(list) do
@@ -2458,31 +2462,39 @@ function Picon.new(opts)
 	}).Parent = navScroll
 
 	-- User card (bottom of sidebar)
+	-- Static user card (does NOT follow theme — always dark inset)
+	local USER_CARD_BG = Color3.fromRGB(16, 16, 20)
+	local USER_CARD_STROKE = Color3.fromRGB(38, 38, 44)
+	local USER_CARD_TEXT = Color3.fromRGB(228, 228, 234)
+	local USER_CARD_SUB = Color3.fromRGB(140, 142, 152)
+	local USER_CARD_AVATAR_BG = Color3.fromRGB(28, 28, 34)
+
 	local userCard = New("Frame", {
 		Name = "UserCard",
 		Size = UDim2.new(1, -10, 0, 44),
 		Position = UDim2.new(0, 5, 1, -50),
-		BackgroundColor3 = Picon.Theme.Tertiary,
+		BackgroundColor3 = USER_CARD_BG,
+		BackgroundTransparency = 0, -- always solid, ignores window transparency
 		BorderSizePixel = 0,
 		ZIndex = 4,
 	}, {
 		New("UICorner", { CornerRadius = UDim.new(0, 5) }),
-		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
+		New("UIStroke", { Color = USER_CARD_STROKE, Thickness = 1 }),
 	})
 	userCard.Parent = sidebar
-	userCard:SetAttribute("PiconRole", "Tertiary")
-	ApplyButtonGradient(userCard, Picon.Theme.Tertiary, "secondary")
+	userCard:SetAttribute("PiconNoTheme", true)
 
 	local avatar = New("ImageLabel", {
 		Name = "Avatar",
 		Size = UDim2.fromOffset(28, 28),
 		Position = UDim2.new(0, 8, 0.5, -14),
-		BackgroundColor3 = Picon.Theme.Secondary,
+		BackgroundColor3 = USER_CARD_AVATAR_BG,
 		BorderSizePixel = 0,
 		Image = "",
 		ZIndex = 5,
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 	avatar.Parent = userCard
+	avatar:SetAttribute("PiconNoTheme", true)
 
 	task.spawn(function()
 		local ok, content = pcall(function()
@@ -2502,7 +2514,7 @@ function Picon.new(opts)
 		Position = UDim2.fromOffset(42, 6),
 		BackgroundTransparency = 1,
 		Text = realUserName,
-		TextColor3 = Picon.Theme.Text,
+		TextColor3 = USER_CARD_TEXT,
 		Font = Picon.Theme.FontBold,
 		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -2510,7 +2522,7 @@ function Picon.new(opts)
 		ZIndex = 5,
 	})
 	userNameLbl.Parent = userCard
-	userNameLbl:SetAttribute("PiconRole", "Text")
+	userNameLbl:SetAttribute("PiconNoTheme", true)
 
 	local uptimeLbl = New("TextLabel", {
 		Name = "Uptime",
@@ -2518,14 +2530,14 @@ function Picon.new(opts)
 		Position = UDim2.fromOffset(42, 22),
 		BackgroundTransparency = 1,
 		Text = "00:00:00",
-		TextColor3 = Picon.Theme.SubText,
+		TextColor3 = USER_CARD_SUB,
 		Font = Picon.Theme.Font,
 		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ZIndex = 5,
 	})
 	uptimeLbl.Parent = userCard
-	uptimeLbl:SetAttribute("PiconRole", "SubText")
+	uptimeLbl:SetAttribute("PiconNoTheme", true)
 
 	local scriptStart = os.clock()
 	task.spawn(function()
@@ -2905,12 +2917,14 @@ function Picon.new(opts)
 		self.Instance.BackgroundTransparency = 1
 		sidebar.BackgroundTransparency = 1
 		titleBar.BackgroundTransparency = 1
+		if userCard then userCard.BackgroundTransparency = 0 end
 		local info = TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		Tween(self._winScale, info, { Scale = 1 })
 		local fade = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		Tween(self.Instance, fade, { BackgroundTransparency = self._transparency })
-		Tween(sidebar, fade, { BackgroundTransparency = self._transparency })
-		Tween(titleBar, fade, { BackgroundTransparency = self._transparency })
+		local tr = self._transparency or 0
+		Tween(self.Instance, fade, { BackgroundTransparency = tr })
+		Tween(sidebar, fade, { BackgroundTransparency = tr })
+		Tween(titleBar, fade, { BackgroundTransparency = tr })
 	end
 
 	function self:Close()
@@ -2932,13 +2946,16 @@ function Picon.new(opts)
 	function self:SetTransparency(tr)
 		self._transparency = math.clamp(tr, 0, 0.55)
 		Picon.WindowTransparency = self._transparency
-		if self.IsOpen then
-			self.Instance.BackgroundTransparency = self._transparency
-			sidebar.BackgroundTransparency = self._transparency
-			titleBar.BackgroundTransparency = self._transparency
-		end
+		-- Always apply to shell (and when closed so next Open uses correct value)
+		self.Instance.BackgroundTransparency = self.IsOpen and self._transparency or 1
+		sidebar.BackgroundTransparency = self.IsOpen and self._transparency or self._transparency
+		titleBar.BackgroundTransparency = self.IsOpen and self._transparency or self._transparency
 		self.MiniButtonInstance.BackgroundTransparency = self._transparency
-		-- Re-tint surfaces so transparent mode does not look muddy
+		-- Keep user card fully opaque
+		if userCard then
+			userCard.BackgroundTransparency = 0
+		end
+		-- Re-tint surfaces for transparency lift (skips PiconNoTheme)
 		ApplyThemeToInstance(self.Instance)
 		if typeof(self._applyThemeExtra) == "function" then
 			pcall(function() self:_applyThemeExtra() end)
@@ -3156,8 +3173,11 @@ function Picon.new(opts)
 		self.IsOpen = false
 		self.Instance.Visible = false
 		self.MiniButtonInstance.Visible = true
+		self.MiniButtonInstance.BackgroundTransparency = self._transparency
 	else
 		self:Open()
+		-- Ensure transparency from opts/config is visible immediately after open tween target
+		self:SetTransparency(self._transparency or 0)
 	end
 
 	return self
