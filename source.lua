@@ -1868,7 +1868,7 @@ function Picon.new(opts)
 			Position = UDim2.fromOffset(14, 48),
 			BackgroundColor3 = Picon.Theme.Tertiary,
 			TextColor3 = Picon.Theme.Text,
-			PlaceholderText = "Поиск...",
+			PlaceholderText = "Search...",
 			PlaceholderColor3 = Picon.Theme.SubText,
 			Text = "",
 			Font = Picon.Theme.Font,
