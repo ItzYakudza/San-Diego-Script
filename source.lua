@@ -2075,13 +2075,12 @@ function Picon.new(opts)
 		})
 		searchHolder.Parent = titleBar
 		-- Roblox search glyph / engine texture fallback
-		local searchIconImg = opts.SearchIcon or "rbxasset://textures/ui/TopBar/search.png"
 		New("ImageLabel", {
 			Name = "SearchIcon",
 			Size = UDim2.fromOffset(14, 14),
 			Position = UDim2.new(0, 8, 0.5, -7),
 			BackgroundTransparency = 1,
-			Image = searchIconImg,
+			Image = "rbxassetid://140277344408608",
 			ImageColor3 = Picon.Theme.SubText,
 			ZIndex = 7,
 		}).Parent = searchHolder
