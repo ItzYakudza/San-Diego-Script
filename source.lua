@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.5.0  (Neverlose-style)
+	Picon UI Library  v2.6.0  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -15,11 +15,15 @@
 	 • Toggle-бинд не срабатывает при захвате клавиши
 	 • Мини-кнопка: drag не открывает GUI (порог 4px)
 	 • Плоский тёмный стиль в духе Neverlose
+ • rbxasset / rbxassetid иконки в сайдбаре и кнопках
+ • Стили кнопок: primary / secondary / ghost / danger
+ • Нотификации справа снизу
+ • Анимация смены вкладок
 ]]
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.5.0"
+Picon.Version = "2.6.0"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -264,12 +268,29 @@ local function ApplyAutoLayout(content, opts)
 	}).Parent = content
 end
 
+local function IsRbxImage(s)
+	if typeof(s) ~= "string" or s == "" then return false end
+	return string.find(s, "rbxasset", 1, true) ~= nil
+		or string.find(s, "http", 1, true) ~= nil
+		or string.match(s, "^%d+$") ~= nil
+end
+
+local function NormalizeImage(s)
+	if typeof(s) ~= "string" then return s end
+	if string.match(s, "^%d+$") then
+		return "rbxassetid://" .. s
+	end
+	return s
+end
+
 local function PopulateButtonVisual(btn, opts, size)
 	local hasIcon = opts.Icon and opts.Icon ~= ""
 	local hasText = opts.Text and opts.Text ~= ""
-	local spacing = opts.Spacing or 8
+	local spacing = opts.Spacing or 6
+	local iconTint = opts.IconColor or opts.TextColor or Color3.new(1, 1, 1)
+	local textSize = opts.TextSize or 14
 
-	if hasIcon and hasText then
+	if hasIcon and hasText and IsRbxImage(opts.Icon) then
 		local inner = New("Frame", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
@@ -283,40 +304,45 @@ local function PopulateButtonVisual(btn, opts, size)
 			}),
 		})
 		inner.Parent = btn
-		local iconSize = opts.IconSize or Vector2.new(math.max(size.Y - 16, 16), math.max(size.Y - 16, 16))
+		local iconSize = opts.IconSize or Vector2.new(math.max(size.Y - 14, 14), math.max(size.Y - 14, 14))
 		New("ImageLabel", {
+			Name = "Icon",
 			Size = UDim2.fromOffset(iconSize.X, iconSize.Y),
 			BackgroundTransparency = 1,
-			Image = opts.Icon,
+			Image = NormalizeImage(opts.Icon),
+			ImageColor3 = iconTint,
 			LayoutOrder = 1,
 		}).Parent = inner
 		New("TextLabel", {
+			Name = "TextLabel",
 			Size = UDim2.fromOffset(math.max(size.X - iconSize.X - spacing * 3, 12), size.Y),
 			BackgroundTransparency = 1,
 			Text = opts.Text,
 			TextColor3 = opts.TextColor or Color3.new(1, 1, 1),
 			Font = Picon.Theme.FontBold,
-			TextSize = opts.TextSize or 17,
+			TextSize = textSize,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Center,
 			LayoutOrder = 2,
 		}).Parent = inner
-	elseif hasIcon then
+	elseif hasIcon and IsRbxImage(opts.Icon) then
 		New("ImageLabel", {
+			Name = "Icon",
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromScale(0.5, 0.5),
 			Size = UDim2.fromOffset(
-				opts.IconSize and opts.IconSize.X or (size.Y - 16),
-				opts.IconSize and opts.IconSize.Y or (size.Y - 16)
+				opts.IconSize and opts.IconSize.X or (size.Y - 14),
+				opts.IconSize and opts.IconSize.Y or (size.Y - 14)
 			),
 			BackgroundTransparency = 1,
-			Image = opts.Icon,
+			Image = NormalizeImage(opts.Icon),
+			ImageColor3 = iconTint,
 		}).Parent = btn
 	elseif hasText then
 		btn.Text = opts.Text
 		btn.TextColor3 = opts.TextColor or Color3.new(1, 1, 1)
 		btn.Font = Picon.Theme.FontBold
-		btn.TextSize = opts.TextSize or 17
+		btn.TextSize = textSize
 	end
 end
 
@@ -513,34 +539,85 @@ function Container:AddButton(opts)
 	opts = opts or {}
 	local size = opts.Size or Vector2.new(180, 32)
 	local pos = opts.Position or Vector2.new(0, 0)
-	local color = opts.Color or Picon.Theme.Accent
+	-- Style: Primary (accent), Secondary (tertiary), Ghost (transparent+stroke), Danger (error muted)
+	local style = string.lower(tostring(opts.Style or "primary"))
+	local color
+	if opts.Color then
+		color = opts.Color
+	elseif style == "secondary" then
+		color = Picon.Theme.Tertiary
+	elseif style == "ghost" then
+		color = Picon.Theme.Secondary
+	elseif style == "danger" then
+		color = Picon.Theme.Error:Lerp(Picon.Theme.Background, 0.35)
+	else
+		color = Picon.Theme.Accent
+	end
+	local textColor = opts.TextColor
+	if not textColor then
+		if style == "secondary" or style == "ghost" then
+			textColor = Picon.Theme.Text
+		else
+			textColor = Color3.fromRGB(255, 255, 255)
+		end
+	end
+	local children = {
+		New("UICorner", { CornerRadius = UDim.new(0, opts.CornerRadius or 4) }),
+	}
+	if style == "ghost" or style == "secondary" then
+		table.insert(children, New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }))
+	end
 	local btn = New("TextButton", {
 		Name = opts.Name or "Button",
 		Size = opts.FillWidth and UDim2.new(1, 0, 0, size.Y) or UDim2.fromOffset(size.X, size.Y),
 		Position = UDim2.fromOffset(pos.X, pos.Y),
 		BackgroundColor3 = color,
+		BackgroundTransparency = (style == "ghost") and 0.4 or 0,
 		AutoButtonColor = false,
 		Text = "",
 		BorderSizePixel = 0,
 		LayoutOrder = opts.LayoutOrder or 0,
-	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, opts.CornerRadius or 4) }),
-	})
+	}, children)
 	btn.Parent = self.Content or self.Instance
-	PopulateButtonVisual(btn, opts, size)
+	local visOpts = {}
+	for k, v in pairs(opts) do visOpts[k] = v end
+	visOpts.TextColor = textColor
+	PopulateButtonVisual(btn, visOpts, size)
 	AttachTooltip(btn, opts.Tooltip)
+	local baseTrans = btn.BackgroundTransparency
 	btn.MouseEnter:Connect(function()
-		Tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), 0.12) })
+		Tween(btn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), 0.1),
+			BackgroundTransparency = math.max(0, baseTrans - 0.15),
+		})
 	end)
 	btn.MouseLeave:Connect(function()
-		Tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = color })
+		Tween(btn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			BackgroundColor3 = color,
+			BackgroundTransparency = baseTrans,
+		})
+	end)
+	btn.MouseButton1Down:Connect(function()
+		Tween(btn, TweenInfo.new(0.06), { BackgroundTransparency = math.min(0.35, baseTrans + 0.1) })
+	end)
+	btn.MouseButton1Up:Connect(function()
+		Tween(btn, TweenInfo.new(0.08), { BackgroundTransparency = baseTrans })
 	end)
 	if opts.Callback then
 		btn.MouseButton1Click:Connect(opts.Callback)
 	end
 	local obj = setmetatable({ Instance = btn }, Element)
-	function obj:SetText(t) btn.Text = t end
-	function obj:SetColor(c) color = c; btn.BackgroundColor3 = c end
+	function obj:SetText(txt)
+		if btn:FindFirstChild("TextLabel") then
+			btn.TextLabel.Text = txt
+		else
+			btn.Text = txt
+		end
+	end
+	function obj:SetColor(c)
+		color = c
+		btn.BackgroundColor3 = c
+	end
 	return obj
 end
 
@@ -1539,8 +1616,8 @@ local function EnsureRoot()
 
 	NotifyContainer = New("Frame", {
 		Name = "NotifyContainer",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -20, 0, 20),
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -16, 1, -16),
 		Size = UDim2.fromOffset(320, 520),
 		BackgroundTransparency = 1,
 		ZIndex = 200,
@@ -1548,9 +1625,9 @@ local function EnsureRoot()
 		New("UIListLayout", {
 			FillDirection = Enum.FillDirection.Vertical,
 			HorizontalAlignment = Enum.HorizontalAlignment.Right,
-			VerticalAlignment = Enum.VerticalAlignment.Top,
+			VerticalAlignment = Enum.VerticalAlignment.Bottom,
 			SortOrder = Enum.SortOrder.LayoutOrder,
-			Padding = UDim.new(0, 10),
+			Padding = UDim.new(0, 8),
 		}),
 	})
 	NotifyContainer.Parent = root
@@ -1982,14 +2059,37 @@ function Picon.new(opts)
 	})
 	pageTitle.Parent = titleBar
 
-	-- optional search in top bar
+	-- optional search in top bar (with icon)
 	local searchBox
 	if opts.Search then
+		local searchHolder = New("Frame", {
+			Name = "SearchHolder",
+			Size = UDim2.fromOffset(180, 28),
+			Position = UDim2.new(1, -230, 0.5, -14),
+			BackgroundColor3 = Picon.Theme.Tertiary,
+			BorderSizePixel = 0,
+			ZIndex = 6,
+		}, {
+			New("UICorner", { CornerRadius = UDim.new(0, 4) }),
+			New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
+		})
+		searchHolder.Parent = titleBar
+		-- Roblox search glyph / engine texture fallback
+		local searchIconImg = opts.SearchIcon or "rbxasset://textures/ui/TopBar/search.png"
+		New("ImageLabel", {
+			Name = "SearchIcon",
+			Size = UDim2.fromOffset(14, 14),
+			Position = UDim2.new(0, 8, 0.5, -7),
+			BackgroundTransparency = 1,
+			Image = searchIconImg,
+			ImageColor3 = Picon.Theme.SubText,
+			ZIndex = 7,
+		}).Parent = searchHolder
 		searchBox = New("TextBox", {
 			Name = "Search",
-			Size = UDim2.fromOffset(160, 28),
-			Position = UDim2.new(1, -210, 0.5, -14),
-			BackgroundColor3 = Picon.Theme.Tertiary,
+			Size = UDim2.new(1, -30, 1, 0),
+			Position = UDim2.fromOffset(26, 0),
+			BackgroundTransparency = 1,
 			TextColor3 = Picon.Theme.Text,
 			PlaceholderText = "Search...",
 			PlaceholderColor3 = Picon.Theme.SubText,
@@ -1998,13 +2098,18 @@ function Picon.new(opts)
 			TextSize = 13,
 			ClearTextOnFocus = false,
 			BorderSizePixel = 0,
-			ZIndex = 6,
-		}, {
-			New("UICorner", { CornerRadius = UDim.new(0, 4) }),
-			New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
-			New("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 7,
 		})
-		searchBox.Parent = titleBar
+		searchBox.Parent = searchHolder
+		searchBox.Focused:Connect(function()
+			local stroke = searchHolder:FindFirstChildOfClass("UIStroke")
+			if stroke then Tween(stroke, TweenInfo.new(0.12), { Color = Picon.Theme.Accent }) end
+		end)
+		searchBox.FocusLost:Connect(function()
+			local stroke = searchHolder:FindFirstChildOfClass("UIStroke")
+			if stroke then Tween(stroke, TweenInfo.new(0.12), { Color = Picon.Theme.Stroke }) end
+		end)
 	end
 
 	local closeBtn
@@ -2258,7 +2363,7 @@ function Picon.new(opts)
 	function self:AddTab(opts)
 		opts = opts or {}
 		local name = opts.Name or opts.Text or ("Tab" .. tostring(#self._tabs + 1))
-		local icon = opts.Icon -- optional Image string or unicode glyph via Text prefix
+		local icon = opts.Icon
 
 		local page = New("ScrollingFrame", {
 			Name = "Tab_" .. name,
@@ -2276,10 +2381,13 @@ function Picon.new(opts)
 		page.Parent = pagesHost
 		ApplyAutoLayout(page, opts)
 
+		local pageScale = New("UIScale", { Scale = 1 })
+		pageScale.Parent = page
+
 		-- Sidebar nav button
 		local tabBtn = New("TextButton", {
 			Name = "Nav_" .. name,
-			Size = UDim2.new(1, 0, 0, 32),
+			Size = UDim2.new(1, 0, 0, 34),
 			BackgroundColor3 = Picon.Theme.Tertiary,
 			BackgroundTransparency = 1,
 			Text = "",
@@ -2287,7 +2395,7 @@ function Picon.new(opts)
 			BorderSizePixel = 0,
 			LayoutOrder = opts.LayoutOrder or (#self._tabs + 1) * 10,
 			ZIndex = 4,
-		}, { New("UICorner", { CornerRadius = UDim.new(0, 4) }) })
+		}, { New("UICorner", { CornerRadius = UDim.new(0, 5) }) })
 		tabBtn.Parent = navScroll
 
 		local accentBar = New("Frame", {
@@ -2301,39 +2409,39 @@ function Picon.new(opts)
 		}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 		accentBar.Parent = tabBtn
 
-		local labelText = name
-		if typeof(icon) == "string" and icon ~= "" and not string.find(icon, "rbxasset") then
-			-- unicode / emoji icon as prefix
-			labelText = icon .. "  " .. name
+		local hasRbxIcon = typeof(icon) == "string" and icon ~= "" and IsRbxImage(icon)
+		local labelPad = hasRbxIcon and 36 or 12
+
+		local navIcon
+		if hasRbxIcon then
+			navIcon = New("ImageLabel", {
+				Name = "NavIcon",
+				Size = UDim2.fromOffset(16, 16),
+				Position = UDim2.new(0, 12, 0.5, -8),
+				BackgroundTransparency = 1,
+				Image = NormalizeImage(icon),
+				ImageColor3 = Picon.Theme.SubText,
+				ZIndex = 5,
+			})
+			navIcon.Parent = tabBtn
 		end
 
 		local navLabel = New("TextLabel", {
-			Size = UDim2.new(1, -14, 1, 0),
-			Position = UDim2.fromOffset(12, 0),
+			Name = "NavLabel",
+			Size = UDim2.new(1, -(labelPad + 8), 1, 0),
+			Position = UDim2.fromOffset(labelPad, 0),
 			BackgroundTransparency = 1,
-			Text = labelText,
+			Text = name,
 			TextColor3 = Picon.Theme.SubText,
 			Font = Picon.Theme.Font,
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
 			ZIndex = 5,
 		})
 		navLabel.Parent = tabBtn
 
-		if typeof(icon) == "string" and string.find(icon, "rbxasset") then
-			navLabel.Position = UDim2.fromOffset(34, 0)
-			navLabel.Size = UDim2.new(1, -40, 1, 0)
-			New("ImageLabel", {
-				Size = UDim2.fromOffset(16, 16),
-				Position = UDim2.new(0, 12, 0.5, -8),
-				BackgroundTransparency = 1,
-				Image = icon,
-				ImageColor3 = Picon.Theme.SubText,
-				ZIndex = 5,
-			}).Parent = tabBtn
-		end
-
-		local tabObj = setmetatable({ Instance = page, Content = page, _btn = tabBtn, _name = name }, Container)
+		local tabObj = setmetatable({ Instance = page, Content = page, _btn = tabBtn, _name = name, _pageScale = pageScale }, Container)
 		table.insert(self._tabs, {
 			name = name,
 			page = page,
@@ -2341,6 +2449,8 @@ function Picon.new(opts)
 			obj = tabObj,
 			accent = accentBar,
 			label = navLabel,
+			icon = navIcon,
+			pageScale = pageScale,
 		})
 
 		local function activate()
@@ -2350,6 +2460,9 @@ function Picon.new(opts)
 				t.accent.BackgroundTransparency = 1
 				t.label.TextColor3 = Picon.Theme.SubText
 				t.label.Font = Picon.Theme.Font
+				if t.icon then
+					t.icon.ImageColor3 = Picon.Theme.SubText
+				end
 			end
 			page.Visible = true
 			content.Visible = false
@@ -2358,19 +2471,27 @@ function Picon.new(opts)
 			accentBar.BackgroundTransparency = 0
 			navLabel.TextColor3 = Picon.Theme.Text
 			navLabel.Font = Picon.Theme.FontBold
+			if navIcon then
+				navIcon.ImageColor3 = Picon.Theme.Accent
+			end
 			pageTitle.Text = name
 			activeTab = tabObj
+
+			-- soft content enter animation
+			pageScale.Scale = 0.98
+			page.CanvasPosition = Vector2.new(0, 0)
+			Tween(pageScale, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Scale = 1 })
 		end
 
 		tabBtn.MouseEnter:Connect(function()
 			if activeTab ~= tabObj then
-				tabBtn.BackgroundTransparency = 0.5
+				Tween(tabBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0.55 })
 				tabBtn.BackgroundColor3 = Picon.Theme.Tertiary
 			end
 		end)
 		tabBtn.MouseLeave:Connect(function()
 			if activeTab ~= tabObj then
-				tabBtn.BackgroundTransparency = 1
+				Tween(tabBtn, TweenInfo.new(0.12), { BackgroundTransparency = 1 })
 			end
 		end)
 		tabBtn.MouseButton1Click:Connect(activate)
