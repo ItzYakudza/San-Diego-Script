@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.11.4  (Neverlose-style)
+	Picon UI Library  v2.11.5  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -23,7 +23,7 @@
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.11.4"
+Picon.Version = "2.11.5"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -202,10 +202,7 @@ function Picon.SetTheme(nameOrTable)
 		local w = Picon._Windows[i]
 		if w and w.Instance and w.Instance.Parent then
 			ApplyThemeToInstance(w.Instance)
-			if w.MiniButtonInstance then
-				ApplyThemeToInstance(w.MiniButtonInstance)
-				w.MiniButtonInstance.BackgroundColor3 = Picon.Theme.Secondary
-			end
+			-- MiniButton is static (PiconNoTheme) — skip theme paint
 			if w.Sidebar then ApplyThemeToInstance(w.Sidebar) end
 			-- repaint every button with PiconBtnStyle under this window
 			if ButtonColorForStyle and ApplyButtonGradient then
@@ -429,19 +426,19 @@ RefreshGradients = function(root)
 	for _, item in ipairs(list) do
 		local parent, g = item.parent, item.grad
 		if parent and parent:IsA("GuiObject") then
-		local kind = g:GetAttribute("PiconGradKind") or "surface"
-		local style = g:GetAttribute("PiconGradStyle") or "secondary"
-		local strength = g:GetAttribute("PiconGradStrength") or 0.08
-		if kind == "accent" then
-			ApplyAccentGradient(parent)
-		elseif kind == "button" then
-			local btnStyle = parent:GetAttribute("PiconBtnStyle") or style
-			local base = ButtonColorForStyle(btnStyle)
-			parent.BackgroundColor3 = base
-			ApplyButtonGradient(parent, base, btnStyle)
-		else
-			ApplySurfaceGradient(parent, strength)
-		end
+			local kind = g:GetAttribute("PiconGradKind") or "surface"
+			local style = g:GetAttribute("PiconGradStyle") or "secondary"
+			local strength = g:GetAttribute("PiconGradStrength") or 0.08
+			if kind == "accent" then
+				ApplyAccentGradient(parent)
+			elseif kind == "button" then
+				local btnStyle = parent:GetAttribute("PiconBtnStyle") or style
+				local base = ButtonColorForStyle(btnStyle)
+				parent.BackgroundColor3 = base
+				ApplyButtonGradient(parent, base, btnStyle)
+			else
+				ApplySurfaceGradient(parent, strength)
+			end
 		end
 	end
 end
@@ -2721,7 +2718,11 @@ function Picon.new(opts)
 	else
 		miniPos = MiniPositionFromSide(miniOpts.Position or "Left", miniSize)
 	end
-	local miniColor = miniOpts.Color or Picon.Theme.Secondary
+	-- Static mini button (does NOT follow theme)
+	local MINI_BG = Color3.fromRGB(22, 22, 28)
+	local MINI_HOVER = Color3.fromRGB(36, 36, 44)
+	local MINI_TEXT = Color3.fromRGB(230, 230, 236)
+	local miniColor = miniOpts.Color or MINI_BG
 	local miniBtn = New("TextButton", {
 		Name = "PiconMiniButton",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -2735,9 +2736,10 @@ function Picon.new(opts)
 		Visible = false,
 	}, {
 		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 6) }),
+		New("UIStroke", { Color = Color3.fromRGB(48, 48, 56), Thickness = 1 }),
 	})
 	miniBtn.Parent = root
-	ApplyButtonGradient(miniBtn, miniColor, "secondary")
+	miniBtn:SetAttribute("PiconNoTheme", true)
 	local autoTextSize = math.clamp(math.floor(math.min(miniSize.X, miniSize.Y) * 0.42), 10, 22)
 	local autoIcon = math.max(math.floor(math.min(miniSize.X, miniSize.Y) - 12), 12)
 	PopulateButtonVisual(miniBtn, {
@@ -2745,12 +2747,12 @@ function Picon.new(opts)
 		Icon = miniOpts.Icon,
 		IconSize = miniOpts.IconSize or Vector2.new(autoIcon, autoIcon),
 		TextSize = miniOpts.TextSize or autoTextSize,
-		TextColor = miniOpts.TextColor or Picon.Theme.Text,
+		TextColor = miniOpts.TextColor or MINI_TEXT,
 		Spacing = miniOpts.Spacing or 4,
 	}, miniSize)
 	miniBtn.MouseEnter:Connect(function()
 		Tween(miniBtn, TweenInfo.new(0.12), {
-			BackgroundColor3 = miniColor:Lerp(Picon.Theme.Accent, 0.25),
+			BackgroundColor3 = miniOpts.Color and miniColor:Lerp(Color3.new(1,1,1), 0.12) or MINI_HOVER,
 		})
 	end)
 	miniBtn.MouseLeave:Connect(function()
@@ -2838,14 +2840,7 @@ function Picon.new(opts)
 		if self.TitleLabel then
 			self.TitleLabel.TextColor3 = Picon.Theme.Text
 		end
-		if self.MiniButtonInstance then
-			local mc = LiftForTransparency(Picon.Theme.Secondary)
-			self.MiniButtonInstance.BackgroundColor3 = mc
-			if ApplyButtonGradient then
-				ApplyButtonGradient(self.MiniButtonInstance, mc, "secondary")
-			end
-			self.MiniButtonInstance.BackgroundTransparency = self._transparency or Picon.WindowTransparency or 0
-		end
+		-- MiniButton static — not themed
 	end
 
 	function self:SetUserNameVisible(v)
