@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.11.0  (Neverlose-style)
+	Picon UI Library  v2.11.1  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -23,7 +23,7 @@
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.11.0"
+Picon.Version = "2.11.1"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -70,6 +70,7 @@ Picon.Theme = {
 Picon._Windows = {} -- live theme targets
 
 local RefreshGradients -- forward decl (defined with gradient helpers)
+local ButtonColorForStyle -- forward decl
 
 Picon.Themes = {
 	Default = {
@@ -176,24 +177,50 @@ function Picon.SetTheme(nameOrTable)
 	for k, v in pairs(th) do
 		Picon.Theme[k] = v
 	end
-	-- live apply to open windows + notifies + mini
+	-- Ensure button shade keys always exist (older configs / partial tables)
+	if not Picon.Theme.ButtonPrimary then Picon.Theme.ButtonPrimary = Picon.Theme.Accent end
+	if not Picon.Theme.ButtonSecondary then Picon.Theme.ButtonSecondary = Picon.Theme.Tertiary end
+	if not Picon.Theme.ButtonGhost then Picon.Theme.ButtonGhost = Picon.Theme.Secondary end
+	if not Picon.Theme.ButtonDanger then Picon.Theme.ButtonDanger = Picon.Theme.Accent:Lerp(Color3.new(0,0,0), 0.25) end
+
 	for i = #Picon._Windows, 1, -1 do
 		local w = Picon._Windows[i]
 		if w and w.Instance and w.Instance.Parent then
 			ApplyThemeToInstance(w.Instance)
 			if w.MiniButtonInstance then
 				ApplyThemeToInstance(w.MiniButtonInstance)
-				-- keep mini color in sync
 				w.MiniButtonInstance.BackgroundColor3 = Picon.Theme.Secondary
 			end
 			if w.Sidebar then ApplyThemeToInstance(w.Sidebar) end
-			if w._applyThemeExtra then pcall(w._applyThemeExtra) end
+			-- repaint every button with PiconBtnStyle under this window
+			for _, d in ipairs(w.Instance:GetDescendants()) do
+				if d:IsA("GuiObject") and d:GetAttribute("PiconBtnStyle") then
+					local st = d:GetAttribute("PiconBtnStyle")
+					local c = ButtonColorForStyle(st)
+					d.BackgroundColor3 = c
+					ApplyButtonGradient(d, c, st)
+				end
+			end
+			if typeof(w._applyThemeExtra) == "function" then
+				pcall(function() w:_applyThemeExtra() end)
+			end
 		else
 			table.remove(Picon._Windows, i)
 		end
 	end
 	if NotifyContainer then ApplyThemeToInstance(NotifyContainer) end
-	if ScaleRootGlobal then RefreshGradients(ScaleRootGlobal) end
+	if ScaleRootGlobal then
+		ApplyThemeToInstance(ScaleRootGlobal)
+		RefreshGradients(ScaleRootGlobal)
+		for _, d in ipairs(ScaleRootGlobal:GetDescendants()) do
+			if d:IsA("GuiObject") and d:GetAttribute("PiconBtnStyle") then
+				local st = d:GetAttribute("PiconBtnStyle")
+				local c = ButtonColorForStyle(st)
+				d.BackgroundColor3 = c
+				ApplyButtonGradient(d, c, st)
+			end
+		end
+	end
 	return true
 end
 
@@ -310,7 +337,7 @@ local function ApplyAccentGradient(parent)
 	return g
 end
 
-local function ButtonColorForStyle(style)
+ButtonColorForStyle = function(style)
 	style = string.lower(tostring(style or "primary"))
 	local th = Picon.Theme
 	if style == "secondary" then
@@ -778,24 +805,31 @@ function Container:AddButton(opts)
 	visOpts.TextColor = textColor
 	PopulateButtonVisual(btn, visOpts, size)
 	AttachTooltip(btn, opts.Tooltip)
-	-- Hover via color lerp only — transparency stays stable (works with window fade)
+	-- Always resolve color from current theme (fixes stuck hover after theme change)
+	local function liveColor()
+		return opts.Color or ButtonColorForStyle(btn:GetAttribute("PiconBtnStyle") or style)
+	end
 	btn.MouseEnter:Connect(function()
+		local c = liveColor()
 		Tween(btn, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), 0.12),
+			BackgroundColor3 = c:Lerp(Color3.new(1, 1, 1), 0.12),
 		})
 	end)
 	btn.MouseLeave:Connect(function()
-		Tween(btn, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			BackgroundColor3 = color,
-		})
+		local c = liveColor()
+		btn.BackgroundColor3 = c
+		ApplyButtonGradient(btn, c, btn:GetAttribute("PiconBtnStyle") or style)
 	end)
 	btn.MouseButton1Down:Connect(function()
+		local c = liveColor()
 		Tween(btn, TweenInfo.new(0.06), {
-			BackgroundColor3 = color:Lerp(Color3.new(0, 0, 0), 0.12),
+			BackgroundColor3 = c:Lerp(Color3.new(0, 0, 0), 0.12),
 		})
 	end)
 	btn.MouseButton1Up:Connect(function()
-		Tween(btn, TweenInfo.new(0.08), { BackgroundColor3 = color })
+		local c = liveColor()
+		btn.BackgroundColor3 = c
+		ApplyButtonGradient(btn, c, btn:GetAttribute("PiconBtnStyle") or style)
 	end)
 	if opts.Callback then
 		btn.MouseButton1Click:Connect(opts.Callback)
@@ -2716,6 +2750,43 @@ function Picon.new(opts)
 	self.UserAvatar = avatar
 	self._showUserName = true
 
+	-- Full theme repaint for nav tabs / active state / accents
+	function self:_applyThemeExtra()
+		local active = activeTab
+		for _, tab in ipairs(self._tabs) do
+			local isActive = active and tab.obj == active
+			if tab.accent then
+				tab.accent.BackgroundColor3 = Picon.Theme.Accent
+				tab.accent.BackgroundTransparency = isActive and 0 or 1
+			end
+			if tab.btn then
+				tab.btn.BackgroundColor3 = Picon.Theme.Tertiary
+				if isActive then
+					tab.btn.BackgroundTransparency = 0
+				else
+					tab.btn.BackgroundTransparency = 1
+				end
+			end
+			if tab.label then
+				tab.label.TextColor3 = isActive and Picon.Theme.Text or Picon.Theme.SubText
+				tab.label.Font = isActive and Picon.Theme.FontBold or Picon.Theme.Font
+			end
+			if tab.icon then
+				tab.icon.ImageColor3 = isActive and Picon.Theme.Accent or Picon.Theme.SubText
+			end
+		end
+		if self.PageTitle then
+			self.PageTitle.TextColor3 = Picon.Theme.Text
+		end
+		if self.TitleLabel then
+			self.TitleLabel.TextColor3 = Picon.Theme.Text
+		end
+		if self.MiniButtonInstance then
+			self.MiniButtonInstance.BackgroundColor3 = Picon.Theme.Secondary
+			ApplyButtonGradient(self.MiniButtonInstance, Picon.Theme.Secondary, "secondary")
+		end
+	end
+
 	function self:SetUserNameVisible(v)
 		self._showUserName = not not v
 		if self._showUserName then
@@ -2906,6 +2977,9 @@ function Picon.new(opts)
 			ZIndex = 5,
 		}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 		accentBar.Parent = tabBtn
+		accentBar:SetAttribute("PiconRole", "Accent")
+		tabBtn:SetAttribute("PiconRole", "Tertiary")
+		tabBtn:SetAttribute("PiconNavTab", true)
 
 		local hasRbxIcon = typeof(icon) == "string" and icon ~= "" and IsRbxImage(icon)
 		local labelPad = hasRbxIcon and 36 or 12
@@ -2922,6 +2996,7 @@ function Picon.new(opts)
 				ZIndex = 5,
 			})
 			navIcon.Parent = tabBtn
+			navIcon:SetAttribute("PiconRole", "Icon")
 		end
 
 		local navLabel = New("TextLabel", {
@@ -2938,6 +3013,7 @@ function Picon.new(opts)
 			ZIndex = 5,
 		})
 		navLabel.Parent = tabBtn
+		navLabel:SetAttribute("PiconRole", "SubText")
 
 		local tabObj = setmetatable({ Instance = page, Content = page, _btn = tabBtn, _name = name, _pageScale = pageScale }, Container)
 		table.insert(self._tabs, {
@@ -2982,13 +3058,14 @@ function Picon.new(opts)
 
 		tabBtn.MouseEnter:Connect(function()
 			if activeTab ~= tabObj then
-				Tween(tabBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0.55 })
 				tabBtn.BackgroundColor3 = Picon.Theme.Tertiary
+				Tween(tabBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0.45 })
 			end
 		end)
 		tabBtn.MouseLeave:Connect(function()
 			if activeTab ~= tabObj then
 				Tween(tabBtn, TweenInfo.new(0.12), { BackgroundTransparency = 1 })
+				tabBtn.BackgroundColor3 = Picon.Theme.Tertiary
 			end
 		end)
 		tabBtn.MouseButton1Click:Connect(activate)
