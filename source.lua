@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.4.0
+	Picon UI Library  v2.5.0  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -13,11 +13,13 @@
 	 • MiniButton: Left / Center / Right
 	 • Прозрачность наследуется нотификациями
 	 • Toggle-бинд не срабатывает при захвате клавиши
+	 • Мини-кнопка: drag не открывает GUI (порог 4px)
+	 • Плоский тёмный стиль в духе Neverlose
 ]]
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.0.0"
+Picon.Version = "2.5.0"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -41,69 +43,70 @@ Picon._CapturingKeybind = false
 Picon._Flags = {}          -- глобальное хранилище флагов
 Picon._NotifyStack = {}    -- активные нотификации
 
+-- Neverlose-inspired flat dark theme
 Picon.Theme = {
-	Background = Color3.fromRGB(28, 28, 34),
-	Secondary  = Color3.fromRGB(38, 38, 46),
-	Tertiary   = Color3.fromRGB(48, 48, 58),
-	Accent     = Color3.fromRGB(88, 101, 242),
-	Success    = Color3.fromRGB(67, 181, 129),
-	Warning    = Color3.fromRGB(250, 166, 26),
-	Error      = Color3.fromRGB(237, 66, 69),
-	Text       = Color3.fromRGB(235, 235, 240),
-	SubText    = Color3.fromRGB(170, 170, 180),
-	Stroke     = Color3.fromRGB(55, 55, 65),
+	Background = Color3.fromRGB(14, 14, 16),
+	Secondary  = Color3.fromRGB(20, 20, 24),
+	Tertiary   = Color3.fromRGB(28, 28, 34),
+	Accent     = Color3.fromRGB(47, 128, 237),   -- Neverlose blue
+	Success    = Color3.fromRGB(52, 199, 89),
+	Warning    = Color3.fromRGB(255, 159, 10),
+	Error      = Color3.fromRGB(255, 69, 58),
+	Text       = Color3.fromRGB(230, 230, 235),
+	SubText    = Color3.fromRGB(140, 140, 150),
+	Stroke     = Color3.fromRGB(36, 36, 42),
 	Font       = Enum.Font.Gotham,
 	FontBold   = Enum.Font.GothamBold,
 }
 
 Picon.Themes = {
 	Default = {
-		Background = Color3.fromRGB(28, 28, 34),
-		Secondary  = Color3.fromRGB(38, 38, 46),
-		Tertiary   = Color3.fromRGB(48, 48, 58),
-		Accent     = Color3.fromRGB(88, 101, 242),
-		Success    = Color3.fromRGB(67, 181, 129),
-		Warning    = Color3.fromRGB(250, 166, 26),
-		Error      = Color3.fromRGB(237, 66, 69),
-		Text       = Color3.fromRGB(235, 235, 240),
-		SubText    = Color3.fromRGB(170, 170, 180),
-		Stroke     = Color3.fromRGB(55, 55, 65),
+		Background = Color3.fromRGB(14, 14, 16),
+		Secondary  = Color3.fromRGB(20, 20, 24),
+		Tertiary   = Color3.fromRGB(28, 28, 34),
+		Accent     = Color3.fromRGB(47, 128, 237),
+		Success    = Color3.fromRGB(52, 199, 89),
+		Warning    = Color3.fromRGB(255, 159, 10),
+		Error      = Color3.fromRGB(255, 69, 58),
+		Text       = Color3.fromRGB(230, 230, 235),
+		SubText    = Color3.fromRGB(140, 140, 150),
+		Stroke     = Color3.fromRGB(36, 36, 42),
 	},
 	Midnight = {
-		Background = Color3.fromRGB(12, 14, 22),
-		Secondary  = Color3.fromRGB(20, 24, 36),
-		Tertiary   = Color3.fromRGB(30, 36, 52),
-		Accent     = Color3.fromRGB(99, 102, 241),
-		Success    = Color3.fromRGB(52, 211, 153),
-		Warning    = Color3.fromRGB(251, 191, 36),
-		Error      = Color3.fromRGB(248, 113, 113),
-		Text       = Color3.fromRGB(240, 242, 250),
-		SubText    = Color3.fromRGB(148, 163, 184),
-		Stroke     = Color3.fromRGB(40, 48, 68),
+		Background = Color3.fromRGB(10, 10, 14),
+		Secondary  = Color3.fromRGB(16, 16, 22),
+		Tertiary   = Color3.fromRGB(24, 24, 32),
+		Accent     = Color3.fromRGB(47, 128, 237),
+		Success    = Color3.fromRGB(52, 199, 89),
+		Warning    = Color3.fromRGB(255, 159, 10),
+		Error      = Color3.fromRGB(255, 69, 58),
+		Text       = Color3.fromRGB(230, 230, 235),
+		SubText    = Color3.fromRGB(130, 130, 145),
+		Stroke     = Color3.fromRGB(32, 32, 40),
 	},
 	Ocean = {
-		Background = Color3.fromRGB(15, 23, 32),
-		Secondary  = Color3.fromRGB(22, 32, 44),
-		Tertiary   = Color3.fromRGB(30, 42, 56),
+		Background = Color3.fromRGB(12, 16, 22),
+		Secondary  = Color3.fromRGB(18, 24, 32),
+		Tertiary   = Color3.fromRGB(26, 34, 44),
 		Accent     = Color3.fromRGB(14, 165, 233),
 		Success    = Color3.fromRGB(34, 197, 94),
 		Warning    = Color3.fromRGB(234, 179, 8),
 		Error      = Color3.fromRGB(239, 68, 68),
-		Text       = Color3.fromRGB(236, 242, 248),
-		SubText    = Color3.fromRGB(148, 163, 184),
-		Stroke     = Color3.fromRGB(45, 58, 72),
+		Text       = Color3.fromRGB(230, 236, 242),
+		SubText    = Color3.fromRGB(140, 155, 170),
+		Stroke     = Color3.fromRGB(36, 46, 58),
 	},
 	Rose = {
-		Background = Color3.fromRGB(28, 20, 24),
-		Secondary  = Color3.fromRGB(40, 28, 34),
-		Tertiary   = Color3.fromRGB(52, 36, 44),
+		Background = Color3.fromRGB(18, 12, 16),
+		Secondary  = Color3.fromRGB(26, 18, 22),
+		Tertiary   = Color3.fromRGB(36, 26, 32),
 		Accent     = Color3.fromRGB(244, 63, 94),
 		Success    = Color3.fromRGB(74, 222, 128),
 		Warning    = Color3.fromRGB(251, 146, 60),
 		Error      = Color3.fromRGB(239, 68, 68),
-		Text       = Color3.fromRGB(250, 240, 244),
-		SubText    = Color3.fromRGB(180, 160, 170),
-		Stroke     = Color3.fromRGB(60, 42, 50),
+		Text       = Color3.fromRGB(245, 235, 240),
+		SubText    = Color3.fromRGB(170, 150, 160),
+		Stroke     = Color3.fromRGB(48, 34, 42),
 	},
 }
 
@@ -188,15 +191,19 @@ end
 
 local CurrentUIScale = 1
 
+-- returns cleanup, and a function that tells if the last interaction was a real drag
 local function MakeDraggable(handle, target)
 	local dragging = false
+	local didDrag = false
 	local dragStart, startPos
 	local conns = {}
+	local DRAG_THRESHOLD = 4 -- px before we consider it a drag (suppresses click)
 
 	table.insert(conns, handle.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
 			or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
+			didDrag = false
 			dragStart = input.Position
 			startPos = target.Position
 			local ended
@@ -217,15 +224,27 @@ local function MakeDraggable(handle, target)
 		end
 		local scale = math.max(CurrentUIScale, 0.01)
 		local delta = (input.Position - dragStart) / scale
-		target.Position = UDim2.new(
-			startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y
-		)
+		if not didDrag and (math.abs(delta.X) > DRAG_THRESHOLD or math.abs(delta.Y) > DRAG_THRESHOLD) then
+			didDrag = true
+		end
+		if didDrag then
+			target.Position = UDim2.new(
+				startPos.X.Scale, startPos.X.Offset + delta.X,
+				startPos.Y.Scale, startPos.Y.Offset + delta.Y
+			)
+		end
 	end))
 
-	return function()
+	local function cleanup()
 		for _, c in ipairs(conns) do c:Disconnect() end
 	end
+
+	-- true if the most recent press was dragged past the threshold
+	local function wasDragged()
+		return didDrag
+	end
+
+	return cleanup, wasDragged
 end
 
 local function ApplyAutoLayout(content, opts)
@@ -233,15 +252,15 @@ local function ApplyAutoLayout(content, opts)
 	New("UIListLayout", {
 		FillDirection = opts.FillDirection or Enum.FillDirection.Vertical,
 		SortOrder = Enum.SortOrder.LayoutOrder,
-		Padding = UDim.new(0, opts.Spacing or 10),
+		Padding = UDim.new(0, opts.Spacing or 6),
 		HorizontalAlignment = opts.HorizontalAlignment or Enum.HorizontalAlignment.Left,
 		VerticalAlignment = opts.VerticalAlignment or Enum.VerticalAlignment.Top,
 	}).Parent = content
 	New("UIPadding", {
-		PaddingLeft   = UDim.new(0, opts.Padding or 14),
-		PaddingRight  = UDim.new(0, opts.Padding or 14),
-		PaddingTop    = UDim.new(0, opts.Padding or 14),
-		PaddingBottom = UDim.new(0, opts.Padding or 14),
+		PaddingLeft   = UDim.new(0, opts.Padding or 12),
+		PaddingRight  = UDim.new(0, opts.Padding or 12),
+		PaddingTop    = UDim.new(0, opts.Padding or 10),
+		PaddingBottom = UDim.new(0, opts.Padding or 10),
 	}).Parent = content
 end
 
@@ -431,7 +450,8 @@ function Container:AddFrame(opts)
 		ClipsDescendants = opts.ClipsDescendants ~= false,
 		LayoutOrder = opts.LayoutOrder or 0,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, opts.CornerRadius or 8) }),
+		New("UICorner", { CornerRadius = UDim.new(0, opts.CornerRadius or 4) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	frame.Parent = self.Content or self.Instance
 	if opts.AutoLayout ~= false then
@@ -491,7 +511,7 @@ end
 
 function Container:AddButton(opts)
 	opts = opts or {}
-	local size = opts.Size or Vector2.new(180, 40)
+	local size = opts.Size or Vector2.new(180, 32)
 	local pos = opts.Position or Vector2.new(0, 0)
 	local color = opts.Color or Picon.Theme.Accent
 	local btn = New("TextButton", {
@@ -504,16 +524,16 @@ function Container:AddButton(opts)
 		BorderSizePixel = 0,
 		LayoutOrder = opts.LayoutOrder or 0,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, opts.CornerRadius or 8) }),
+		New("UICorner", { CornerRadius = UDim.new(0, opts.CornerRadius or 4) }),
 	})
 	btn.Parent = self.Content or self.Instance
 	PopulateButtonVisual(btn, opts, size)
 	AttachTooltip(btn, opts.Tooltip)
 	btn.MouseEnter:Connect(function()
-		Tween(btn, TweenInfo.new(0.12), { BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), 0.14) })
+		Tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), 0.12) })
 	end)
 	btn.MouseLeave:Connect(function()
-		Tween(btn, TweenInfo.new(0.12), { BackgroundColor3 = color })
+		Tween(btn, TweenInfo.new(0.1), { BackgroundColor3 = color })
 	end)
 	if opts.Callback then
 		btn.MouseButton1Click:Connect(opts.Callback)
@@ -526,25 +546,26 @@ end
 
 function Container:AddTextBox(opts)
 	opts = opts or {}
-	local size = opts.Size or Vector2.new(200, 38)
+	local size = opts.Size or Vector2.new(200, 32)
 	local pos = opts.Position or Vector2.new(0, 0)
 	local box = New("TextBox", {
 		Name = opts.Name or "TextBox",
 		Size = opts.FillWidth and UDim2.new(1, 0, 0, size.Y) or UDim2.fromOffset(size.X, size.Y),
 		Position = UDim2.fromOffset(pos.X, pos.Y),
-		BackgroundColor3 = Picon.Theme.Secondary,
+		BackgroundColor3 = Picon.Theme.Tertiary,
 		TextColor3 = Picon.Theme.Text,
 		PlaceholderText = opts.Placeholder or "",
 		PlaceholderColor3 = Picon.Theme.SubText,
 		Text = opts.Default or (opts.Flag and Picon.GetFlag(opts.Flag, "") or ""),
 		Font = Picon.Theme.Font,
-		TextSize = opts.TextSize or 16,
+		TextSize = opts.TextSize or 14,
 		ClearTextOnFocus = false,
 		BorderSizePixel = 0,
 		LayoutOrder = opts.LayoutOrder or 0,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, 8) }),
-		New("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12) }),
+		New("UICorner", { CornerRadius = UDim.new(0, 4) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
+		New("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
 	})
 	box.Parent = self.Content or self.Instance
 	AttachTooltip(box, opts.Tooltip)
@@ -564,7 +585,7 @@ end
 
 function Container:AddToggle(opts)
 	opts = opts or {}
-	local size = opts.Size or Vector2.new(220, 32)
+	local size = opts.Size or Vector2.new(220, 28)
 	local pos = opts.Position or Vector2.new(0, 0)
 	local state = opts.Default
 	if opts.Flag and Picon.GetFlag(opts.Flag) ~= nil then
@@ -574,32 +595,33 @@ function Container:AddToggle(opts)
 
 	local holder = New("Frame", {
 		Name = opts.Name or "Toggle",
-		Size = opts.FillWidth and UDim2.new(1, 0, 0, 32) or UDim2.fromOffset(size.X, 32),
+		Size = opts.FillWidth and UDim2.new(1, 0, 0, 28) or UDim2.fromOffset(size.X, 28),
 		Position = UDim2.fromOffset(pos.X, pos.Y),
 		BackgroundTransparency = 1,
 		LayoutOrder = opts.LayoutOrder or 0,
 	})
 	holder.Parent = self.Content or self.Instance
 	New("TextLabel", {
-		Size = UDim2.new(1, -56, 1, 0),
+		Size = UDim2.new(1, -48, 1, 0),
 		BackgroundTransparency = 1,
 		Text = opts.Text or "Toggle",
 		TextColor3 = Picon.Theme.Text,
 		Font = Picon.Theme.Font,
-		TextSize = opts.TextSize or 16,
+		TextSize = opts.TextSize or 14,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	}).Parent = holder
+	-- Neverlose-style compact pill toggle
 	local track = New("Frame", {
-		Size = UDim2.fromOffset(48, 26),
-		Position = UDim2.new(1, -48, 0.5, -13),
+		Size = UDim2.fromOffset(36, 18),
+		Position = UDim2.new(1, -36, 0.5, -9),
 		BackgroundColor3 = state and Picon.Theme.Accent or Picon.Theme.Tertiary,
 		BorderSizePixel = 0,
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 	track.Parent = holder
 	local knob = New("Frame", {
-		Size = UDim2.fromOffset(20, 20),
-		Position = state and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10),
-		BackgroundColor3 = Color3.new(1, 1, 1),
+		Size = UDim2.fromOffset(14, 14),
+		Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
+		BackgroundColor3 = Color3.fromRGB(245, 245, 250),
 		BorderSizePixel = 0,
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 	knob.Parent = track
@@ -614,11 +636,11 @@ function Container:AddToggle(opts)
 	local obj = setmetatable({ Instance = holder }, Element)
 	function obj:Set(v)
 		state = not not v
-		Tween(track, TweenInfo.new(0.15), {
+		Tween(track, TweenInfo.new(0.12), {
 			BackgroundColor3 = state and Picon.Theme.Accent or Picon.Theme.Tertiary,
 		})
-		Tween(knob, TweenInfo.new(0.15), {
-			Position = state and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10),
+		Tween(knob, TweenInfo.new(0.12), {
+			Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
 		})
 		if opts.Flag then Picon.SetFlag(opts.Flag, state) end
 		if opts.Callback then opts.Callback(state) end
@@ -666,7 +688,7 @@ function Container:AddSection(opts)
 
 	local holder = New("Frame", {
 		Name = "Section",
-		Size = UDim2.new(1, 0, 0, 34),
+		Size = UDim2.new(1, 0, 0, 28),
 		BackgroundTransparency = 1,
 		LayoutOrder = opts.LayoutOrder or 0,
 		ClipsDescendants = false,
@@ -674,7 +696,7 @@ function Container:AddSection(opts)
 	holder.Parent = self.Content or self.Instance
 
 	local header = New("TextButton", {
-		Size = UDim2.new(1, 0, 0, 34),
+		Size = UDim2.new(1, 0, 0, 28),
 		BackgroundTransparency = 1,
 		Text = "",
 		AutoButtonColor = false,
@@ -682,24 +704,24 @@ function Container:AddSection(opts)
 	header.Parent = holder
 
 	local arrow = New("TextLabel", {
-		Size = UDim2.fromOffset(20, 34),
+		Size = UDim2.fromOffset(16, 28),
 		BackgroundTransparency = 1,
-		Text = collapsible and (collapsed and "▶" or "▼") or "",
+		Text = collapsible and (collapsed and "›" or "˅") or "",
 		TextColor3 = Picon.Theme.SubText,
 		Font = Picon.Theme.Font,
-		TextSize = 12,
+		TextSize = 14,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 	arrow.Parent = header
 
 	local title = New("TextLabel", {
-		Size = UDim2.new(1, collapsible and -24 or 0, 1, 0),
-		Position = UDim2.fromOffset(collapsible and 20 or 0, 0),
+		Size = UDim2.new(1, collapsible and -20 or 0, 1, 0),
+		Position = UDim2.fromOffset(collapsible and 16 or 0, 0),
 		BackgroundTransparency = 1,
 		Text = opts.Text or "Section",
-		TextColor3 = opts.Color or Picon.Theme.SubText,
+		TextColor3 = opts.Color or Picon.Theme.Text,
 		Font = Picon.Theme.FontBold,
-		TextSize = opts.TextSize or 15,
+		TextSize = opts.TextSize or 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 	title.Parent = header
@@ -710,6 +732,7 @@ function Container:AddSection(opts)
 			Position = UDim2.new(0, 0, 1, -1),
 			BackgroundColor3 = Picon.Theme.Stroke,
 			BorderSizePixel = 0,
+			BackgroundTransparency = 0.4,
 		}).Parent = header
 	end
 
@@ -720,20 +743,19 @@ function Container:AddSection(opts)
 		body = New("Frame", {
 			Name = "Body",
 			Size = UDim2.new(1, 0, 0, 0),
-			Position = UDim2.fromOffset(0, 34),
+			Position = UDim2.fromOffset(0, 28),
 			BackgroundTransparency = 1,
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Visible = not collapsed,
 		})
 		body.Parent = holder
-		ApplyAutoLayout(body, { Padding = 4, Spacing = 8 })
+		ApplyAutoLayout(body, { Padding = 2, Spacing = 6 })
 		sectionContainer = setmetatable({ Instance = body, Content = body }, Container)
 
 		header.MouseButton1Click:Connect(function()
 			collapsed = not collapsed
 			body.Visible = not collapsed
-			arrow.Text = collapsed and "▶" or "▼"
-			-- holder height auto via children
+			arrow.Text = collapsed and "›" or "˅"
 		end)
 	end
 
@@ -750,7 +772,7 @@ function Container:AddSection(opts)
 		if not collapsible then return end
 		collapsed = not not v
 		body.Visible = not collapsed
-		arrow.Text = collapsed and "▶" or "▼"
+		arrow.Text = collapsed and "›" or "˅"
 	end
 
 	-- Если collapsible — возвращаем контейнер, в который кладут элементы
@@ -769,7 +791,7 @@ function Container:AddSlider(opts)
 	end
 	value = math.clamp(value or minV, minV, maxV)
 	local decimals = opts.Decimals or 0
-	local size = opts.Size or Vector2.new(220, 48)
+	local size = opts.Size or Vector2.new(220, 40)
 	local pos = opts.Position or Vector2.new(0, 0)
 
 	local holder = New("Frame", {
@@ -781,28 +803,29 @@ function Container:AddSlider(opts)
 	})
 	holder.Parent = self.Content or self.Instance
 	New("TextLabel", {
-		Size = UDim2.new(1, -60, 0, 22),
+		Size = UDim2.new(1, -52, 0, 18),
 		BackgroundTransparency = 1,
 		Text = opts.Text or "Slider",
 		TextColor3 = Picon.Theme.Text,
 		Font = Picon.Theme.Font,
-		TextSize = 16,
+		TextSize = 14,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	}).Parent = holder
 	local valueLabel = New("TextLabel", {
-		Size = UDim2.new(0, 56, 0, 22),
-		Position = UDim2.new(1, -56, 0, 0),
+		Size = UDim2.new(0, 48, 0, 18),
+		Position = UDim2.new(1, -48, 0, 0),
 		BackgroundTransparency = 1,
 		Text = string.format("%." .. decimals .. "f", value),
 		TextColor3 = Picon.Theme.SubText,
-		Font = Picon.Theme.FontBold,
-		TextSize = 15,
+		Font = Picon.Theme.Font,
+		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Right,
 	})
 	valueLabel.Parent = holder
+	-- thin Neverlose-style track
 	local track = New("Frame", {
-		Size = UDim2.new(1, 0, 0, 10),
-		Position = UDim2.new(0, 0, 0, 30),
+		Size = UDim2.new(1, 0, 0, 4),
+		Position = UDim2.new(0, 0, 0, 26),
 		BackgroundColor3 = Picon.Theme.Tertiary,
 		BorderSizePixel = 0,
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
@@ -814,10 +837,10 @@ function Container:AddSlider(opts)
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 	fill.Parent = track
 	local knob = New("Frame", {
-		Size = UDim2.fromOffset(18, 18),
+		Size = UDim2.fromOffset(12, 12),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new((value - minV) / math.max(maxV - minV, 1e-6), 0, 0.5, 0),
-		BackgroundColor3 = Color3.new(1, 1, 1),
+		BackgroundColor3 = Color3.fromRGB(245, 245, 250),
 		BorderSizePixel = 0,
 		ZIndex = 2,
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
@@ -921,7 +944,7 @@ function Container:AddDropdown(opts)
 		AutoButtonColor = false,
 		BorderSizePixel = 0,
 		ZIndex = 6,
-	}, { New("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+	}, { New("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 	btn.Parent = holder
 	local selectedLabel = New("TextLabel", {
 		Size = UDim2.new(1, -32, 1, 0),
@@ -970,7 +993,7 @@ function Container:AddDropdown(opts)
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		Selectable = false,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, 8) }),
+		New("UICorner", { CornerRadius = UDim.new(0, 4) }),
 		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 		New("UIListLayout", {
 			SortOrder = Enum.SortOrder.LayoutOrder,
@@ -1326,7 +1349,7 @@ function Container:AddColorPicker(opts)
 		AutoButtonColor = false,
 		BorderSizePixel = 0,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, 8) }),
+		New("UICorner", { CornerRadius = UDim.new(0, 4) }),
 		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	swatch.Parent = holder
@@ -1380,7 +1403,7 @@ function Container:AddColorPicker(opts)
 			BorderSizePixel = 0,
 			ZIndex = 400,
 		}, {
-			New("UICorner", { CornerRadius = UDim.new(0, 8) }),
+			New("UICorner", { CornerRadius = UDim.new(0, 4) }),
 			New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 			New("UIPadding", {
 				PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8),
@@ -1672,7 +1695,7 @@ function Picon.Confirm(opts)
 		BorderSizePixel = 0,
 		ZIndex = 301,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, 12) }),
+		New("UICorner", { CornerRadius = UDim.new(0, 6) }),
 		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 		New("UIPadding", {
 			PaddingTop = UDim.new(0, 18),
@@ -1744,7 +1767,7 @@ function Picon.Confirm(opts)
 		BorderSizePixel = 0,
 		LayoutOrder = 1,
 		ZIndex = 303,
-	}, { New("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+	}, { New("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 	yesBtn.Parent = row
 	yesBtn.MouseButton1Click:Connect(function() finish(true) end)
 
@@ -1759,7 +1782,7 @@ function Picon.Confirm(opts)
 		BorderSizePixel = 0,
 		LayoutOrder = 2,
 		ZIndex = 303,
-	}, { New("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+	}, { New("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 	noBtn.Parent = row
 	noBtn.MouseButton1Click:Connect(function() finish(false) end)
 end
@@ -1793,33 +1816,33 @@ function Picon.new(opts)
 		ClipsDescendants = true,
 		Visible = false,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, 12) }),
+		New("UICorner", { CornerRadius = UDim.new(0, 6) }),
 		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	main.Parent = root
 
-	local winScale = New("UIScale", { Scale = 0.92 })
+	local winScale = New("UIScale", { Scale = 0.96 })
 	winScale.Parent = main
 
 	local titleBar = New("Frame", {
 		Name = "TitleBar",
-		Size = UDim2.new(1, 0, 0, 42),
+		Size = UDim2.new(1, 0, 0, 40),
 		BackgroundColor3 = Picon.Theme.Secondary,
 		BackgroundTransparency = winTransparency,
 		BorderSizePixel = 0,
-	}, { New("UICorner", { CornerRadius = UDim.new(0, 12) }) })
+	})
 	titleBar.Parent = main
+	-- bottom edge of title bar (no rounded "card" look)
 	New("Frame", {
-		Size = UDim2.new(1, 0, 0, 14),
-		Position = UDim2.new(0, 0, 1, -14),
-		BackgroundColor3 = Picon.Theme.Secondary,
-		BackgroundTransparency = winTransparency,
+		Size = UDim2.new(1, 0, 0, 1),
+		Position = UDim2.new(0, 0, 1, -1),
+		BackgroundColor3 = Picon.Theme.Stroke,
 		BorderSizePixel = 0,
 	}).Parent = titleBar
 
 	local titleLabel = New("TextLabel", {
 		Size = UDim2.new(1, -52, 1, 0),
-		Position = UDim2.fromOffset(16, 0),
+		Position = UDim2.fromOffset(14, 0),
 		BackgroundTransparency = 1,
 		Text = opts.Title or "Picon Window",
 		TextColor3 = Picon.Theme.Text,
@@ -1832,55 +1855,57 @@ function Picon.new(opts)
 	local closeBtn
 	if opts.CanClose ~= false then
 		closeBtn = New("TextButton", {
-			Size = UDim2.fromOffset(30, 30),
-			Position = UDim2.new(1, -38, 0.5, -15),
-			BackgroundColor3 = Picon.Theme.Background,
-			BackgroundTransparency = winTransparency,
+			Size = UDim2.fromOffset(28, 28),
+			Position = UDim2.new(1, -34, 0.5, -14),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BackgroundTransparency = 1,
 			Text = "×",
 			TextColor3 = Picon.Theme.SubText,
 			Font = Picon.Theme.FontBold,
-			TextSize = 22,
+			TextSize = 20,
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
-		}, { New("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+		}, { New("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 		closeBtn.Parent = titleBar
 		closeBtn.MouseEnter:Connect(function()
-			Tween(closeBtn, TweenInfo.new(0.12), {
+			Tween(closeBtn, TweenInfo.new(0.1), {
+				BackgroundTransparency = 0,
 				BackgroundColor3 = Picon.Theme.Error,
 				TextColor3 = Color3.new(1, 1, 1),
 			})
 		end)
 		closeBtn.MouseLeave:Connect(function()
-			Tween(closeBtn, TweenInfo.new(0.12), {
-				BackgroundColor3 = Picon.Theme.Background,
+			Tween(closeBtn, TweenInfo.new(0.1), {
+				BackgroundTransparency = 1,
 				TextColor3 = Picon.Theme.SubText,
 			})
 		end)
 	end
 
 	-- Search bar (опционально)
-	local contentTop = 42
+	local contentTop = 40
 	local searchBox
 	if opts.Search then
 		searchBox = New("TextBox", {
 			Name = "Search",
-			Size = UDim2.new(1, -28, 0, 34),
-			Position = UDim2.fromOffset(14, 48),
+			Size = UDim2.new(1, -28, 0, 32),
+			Position = UDim2.fromOffset(14, 46),
 			BackgroundColor3 = Picon.Theme.Tertiary,
 			TextColor3 = Picon.Theme.Text,
 			PlaceholderText = "Search...",
 			PlaceholderColor3 = Picon.Theme.SubText,
 			Text = "",
 			Font = Picon.Theme.Font,
-			TextSize = 15,
+			TextSize = 14,
 			ClearTextOnFocus = false,
 			BorderSizePixel = 0,
 		}, {
-			New("UICorner", { CornerRadius = UDim.new(0, 8) }),
-			New("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12) }),
+			New("UICorner", { CornerRadius = UDim.new(0, 4) }),
+			New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
+			New("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
 		})
 		searchBox.Parent = main
-		contentTop = 90
+		contentTop = 86
 	end
 
 	-- Tab bar placeholder
@@ -1912,7 +1937,7 @@ function Picon.new(opts)
 
 	-- MiniButton
 	local miniOpts = opts.MiniButton or {}
-	local miniSize = miniOpts.Size or Vector2.new(56, 56)
+	local miniSize = miniOpts.Size or Vector2.new(48, 48)
 	local miniPos
 	if typeof(miniOpts.Position) == "Vector2" then
 		miniPos = miniOpts.Position
@@ -1932,7 +1957,8 @@ function Picon.new(opts)
 		BorderSizePixel = 0,
 		Visible = false,
 	}, {
-		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 8) }),
+		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 6) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	miniBtn.Parent = root
 	-- TextSize / IconSize подстраиваются под размер mini-кнопки
@@ -1947,16 +1973,16 @@ function Picon.new(opts)
 		Spacing = miniOpts.Spacing or 4,
 	}, miniSize)
 	miniBtn.MouseEnter:Connect(function()
-		Tween(miniBtn, TweenInfo.new(0.15), {
-			BackgroundColor3 = miniColor:Lerp(Picon.Theme.Accent, 0.35),
+		Tween(miniBtn, TweenInfo.new(0.12), {
+			BackgroundColor3 = miniColor:Lerp(Picon.Theme.Accent, 0.25),
 		})
 	end)
 	miniBtn.MouseLeave:Connect(function()
-		Tween(miniBtn, TweenInfo.new(0.15), { BackgroundColor3 = miniColor })
+		Tween(miniBtn, TweenInfo.new(0.12), { BackgroundColor3 = miniColor })
 	end)
-	local miniDragCleanup
+	local miniDragCleanup, miniWasDragged
 	if miniOpts.Draggable ~= false then
-		miniDragCleanup = MakeDraggable(miniBtn, miniBtn)
+		miniDragCleanup, miniWasDragged = MakeDraggable(miniBtn, miniBtn)
 	end
 
 	local self = setmetatable({
@@ -2010,11 +2036,11 @@ function Picon.new(opts)
 		self.IsOpen = true
 		self.MiniButtonInstance.Visible = false
 		self.Instance.Visible = true
-		self._winScale.Scale = 0.88
+		self._winScale.Scale = 0.96
 		self.Instance.BackgroundTransparency = 1
-		local info = TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		local info = TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		Tween(self._winScale, info, { Scale = 1 })
-		Tween(self.Instance, TweenInfo.new(0.15), {
+		Tween(self.Instance, TweenInfo.new(0.12), {
 			BackgroundTransparency = self._transparency,
 		})
 	end
@@ -2103,17 +2129,17 @@ function Picon.new(opts)
 		ApplyAutoLayout(page, opts)
 
 		local tabBtn = New("TextButton", {
-			Size = UDim2.fromOffset(0, 34),
+			Size = UDim2.fromOffset(0, 30),
 			AutomaticSize = Enum.AutomaticSize.X,
 			BackgroundColor3 = Picon.Theme.Tertiary,
 			Text = "  " .. name .. "  ",
 			TextColor3 = Picon.Theme.SubText,
 			Font = Picon.Theme.FontBold,
-			TextSize = 14,
+			TextSize = 13,
 			AutoButtonColor = false,
 			BorderSizePixel = 0,
 			LayoutOrder = #self._tabs + 1,
-		}, { New("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+		}, { New("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 		tabBtn.Parent = tabBar
 
 		local tabObj = setmetatable({ Instance = page, Content = page, _btn = tabBtn }, Container)
@@ -2142,7 +2168,13 @@ function Picon.new(opts)
 		return tabObj
 	end
 
-	miniBtn.MouseButton1Click:Connect(function() self:Open() end)
+	-- Не открываем GUI если только что тащили мини-кнопку
+	miniBtn.MouseButton1Click:Connect(function()
+		if miniWasDragged and miniWasDragged() then
+			return
+		end
+		self:Open()
+	end)
 	if closeBtn then
 		closeBtn.MouseButton1Click:Connect(function() self:Close() end)
 	end
