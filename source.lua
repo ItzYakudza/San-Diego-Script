@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.7.0  (Neverlose-style)
+	Picon UI Library  v2.8.0  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -23,7 +23,7 @@
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.7.0"
+Picon.Version = "2.8.0"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -1085,37 +1085,36 @@ function Container:AddDropdown(opts)
 		current = Picon.GetFlag(opts.Flag)
 	end
 	current = current or options[1]
-	local size = opts.Size or Vector2.new(220, 36)
-	local pos = opts.Position or Vector2.new(0, 0)
 	local open = false
 	local outsideConn
 
 	local holder = New("Frame", {
 		Name = opts.Name or "Dropdown",
-		Size = opts.FillWidth and UDim2.new(1, 0, 0, size.Y + 18) or UDim2.fromOffset(size.X, size.Y + 18),
-		Position = UDim2.fromOffset(pos.X, pos.Y),
+		Size = UDim2.new(1, 0, 0, 48),
 		BackgroundTransparency = 1,
 		LayoutOrder = opts.LayoutOrder or 0,
+		ZIndex = 5,
 	})
 	holder.Parent = self.Content or self.Instance
 
 	New("TextLabel", {
-		Size = UDim2.new(1, 0, 0, 16),
+		Size = UDim2.new(1, 0, 0, 14),
 		BackgroundTransparency = 1,
 		Text = opts.Text or "Dropdown",
 		TextColor3 = Picon.Theme.Text,
 		Font = Picon.Theme.FontBold,
-		TextSize = 13,
+		TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	}).Parent = holder
 
 	local btn = New("TextButton", {
-		Size = UDim2.new(1, 0, 0, size.Y - 4),
-		Position = UDim2.fromOffset(0, 18),
+		Size = UDim2.new(1, 0, 0, 28),
+		Position = UDim2.fromOffset(0, 16),
 		BackgroundColor3 = Picon.Theme.Tertiary,
 		Text = "",
 		AutoButtonColor = false,
 		BorderSizePixel = 0,
+		ZIndex = 6,
 	}, {
 		New("UICorner", { CornerRadius = UDim.new(0, 4) }),
 		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
@@ -1124,147 +1123,158 @@ function Container:AddDropdown(opts)
 	btn:SetAttribute("PiconRole", "Tertiary")
 
 	local valueLbl = New("TextLabel", {
-		Size = UDim2.new(1, -28, 1, 0),
+		Size = UDim2.new(1, -30, 1, 0),
 		Position = UDim2.fromOffset(10, 0),
 		BackgroundTransparency = 1,
 		Text = tostring(current),
 		TextColor3 = Picon.Theme.Text,
 		Font = Picon.Theme.Font,
-		TextSize = 13,
+		TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
+		ZIndex = 7,
 	})
 	valueLbl.Parent = btn
 	valueLbl:SetAttribute("PiconRole", "Text")
 
 	local arrow = New("TextLabel", {
-		Size = UDim2.fromOffset(20, size.Y - 4),
+		Size = UDim2.fromOffset(24, 28),
 		Position = UDim2.new(1, -24, 0, 0),
 		BackgroundTransparency = 1,
 		Text = "▾",
 		TextColor3 = Picon.Theme.SubText,
 		Font = Picon.Theme.FontBold,
-		TextSize = 12,
+		TextSize = 11,
+		ZIndex = 7,
 	})
 	arrow.Parent = btn
-	arrow:SetAttribute("PiconRole", "SubText")
 	AttachTooltip(holder, opts.Tooltip)
 
-	local listFrame
-	local function closeList()
-		open = false
-		arrow.Text = "▾"
-		if listFrame then
-			Tween(listFrame, TweenInfo.new(0.1), { BackgroundTransparency = 1 })
-			task.delay(0.1, function()
-				if listFrame then listFrame:Destroy(); listFrame = nil end
-			end)
+	-- Inline list (no portal animation) under the button, expands holder
+	local listFrame = New("Frame", {
+		Name = "List",
+		Size = UDim2.new(1, 0, 0, 0),
+		Position = UDim2.fromOffset(0, 48),
+		BackgroundColor3 = Picon.Theme.Secondary,
+		BackgroundTransparency = 0,
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 20,
+		ClipsDescendants = true,
+	}, {
+		New("UICorner", { CornerRadius = UDim.new(0, 4) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
+		New("UIListLayout", {
+			FillDirection = Enum.FillDirection.Vertical,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Padding = UDim.new(0, 1),
+		}),
+		New("UIPadding", {
+			PaddingTop = UDim.new(0, 3),
+			PaddingBottom = UDim.new(0, 3),
+			PaddingLeft = UDim.new(0, 3),
+			PaddingRight = UDim.new(0, 3),
+		}),
+	})
+	listFrame.Parent = holder
+	listFrame:SetAttribute("PiconRole", "Secondary")
+
+	local function rebuildItems()
+		for _, c in ipairs(listFrame:GetChildren()) do
+			if c:IsA("TextButton") then c:Destroy() end
 		end
-		if outsideConn then outsideConn:Disconnect(); outsideConn = nil end
-	end
-
-	local function pick(opt)
-		current = opt
-		valueLbl.Text = tostring(opt)
-		if opts.Flag then Picon.SetFlag(opts.Flag, current) end
-		if opts.Callback then opts.Callback(current) end
-		closeList()
-	end
-
-	local function openList()
-		if open then closeList(); return end
-		EnsureRootExists()
-		local scale = math.max(CurrentUIScale, 0.01)
-		local maxH = math.min(180, #options * 30 + 8)
-		listFrame = New("ScrollingFrame", {
-			Name = "PiconDropdownList",
-			Size = UDim2.fromOffset(btn.AbsoluteSize.X / scale, 0),
-			BackgroundColor3 = Picon.Theme.Secondary,
-			BackgroundTransparency = 0,
-			BorderSizePixel = 0,
-			ScrollBarThickness = 3,
-			ScrollBarImageColor3 = Picon.Theme.Stroke,
-			CanvasSize = UDim2.new(0, 0, 0, #options * 30 + 8),
-			ZIndex = 400,
-			ClipsDescendants = true,
-		}, {
-			New("UICorner", { CornerRadius = UDim.new(0, 4) }),
-			New("UIStroke", { Color = Picon.Theme.Accent, Thickness = 1 }),
-			New("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4) }),
-			New("UIListLayout", {
-				FillDirection = Enum.FillDirection.Vertical,
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, 2),
-			}),
-		})
-		listFrame.Parent = ScaleRootGlobal
-		listFrame:SetAttribute("PiconRole", "Secondary")
-
-		local abs = btn.AbsolutePosition
-		local asz = btn.AbsoluteSize
-		local rootPos = ScaleRootGlobal.AbsolutePosition
-		local x = (abs.X - rootPos.X) / scale
-		local y = (abs.Y + asz.Y - rootPos.Y) / scale + 4
-		listFrame.Position = UDim2.fromOffset(x, y)
-		Tween(listFrame, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Size = UDim2.fromOffset(asz.X / scale, maxH),
-		})
-		arrow.Text = "▴"
-		open = true
-
 		for i, opt in ipairs(options) do
 			local selected = opt == current
 			local item = New("TextButton", {
-				Size = UDim2.new(1, -8, 0, 28),
+				Size = UDim2.new(1, 0, 0, 26),
 				BackgroundColor3 = selected and Picon.Theme.Accent or Picon.Theme.Tertiary,
-				BackgroundTransparency = selected and 0.15 or 1,
+				BackgroundTransparency = selected and 0.25 or 1,
 				Text = "  " .. tostring(opt),
-				TextColor3 = selected and Color3.new(1, 1, 1) or Picon.Theme.Text,
+				TextColor3 = Picon.Theme.Text,
 				Font = selected and Picon.Theme.FontBold or Picon.Theme.Font,
-				TextSize = 13,
+				TextSize = 12,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				AutoButtonColor = false,
 				BorderSizePixel = 0,
 				LayoutOrder = i,
-				ZIndex = 401,
+				ZIndex = 21,
 			}, { New("UICorner", { CornerRadius = UDim.new(0, 3) }) })
 			item.Parent = listFrame
 			item.MouseEnter:Connect(function()
 				if opt ~= current then
-					Tween(item, TweenInfo.new(0.08), { BackgroundTransparency = 0.4, BackgroundColor3 = Picon.Theme.Tertiary })
+					item.BackgroundTransparency = 0.5
+					item.BackgroundColor3 = Picon.Theme.Tertiary
 				end
 			end)
 			item.MouseLeave:Connect(function()
 				if opt ~= current then
-					Tween(item, TweenInfo.new(0.08), { BackgroundTransparency = 1 })
+					item.BackgroundTransparency = 1
 				end
 			end)
-			item.MouseButton1Click:Connect(function() pick(opt) end)
+			item.MouseButton1Click:Connect(function()
+				current = opt
+				valueLbl.Text = tostring(opt)
+				if opts.Flag then Picon.SetFlag(opts.Flag, current) end
+				if opts.Callback then opts.Callback(current) end
+				closeList()
+				rebuildItems()
+			end)
 		end
+	end
 
+	local function closeList()
+		open = false
+		arrow.Text = "▾"
+		listFrame.Visible = false
+		listFrame.Size = UDim2.new(1, 0, 0, 0)
+		holder.Size = UDim2.new(1, 0, 0, 48)
+		local stroke = btn:FindFirstChildOfClass("UIStroke")
+		if stroke then stroke.Color = Picon.Theme.Stroke end
+		if outsideConn then outsideConn:Disconnect(); outsideConn = nil end
+	end
+
+	local function openList()
+		if open then closeList(); return end
+		rebuildItems()
+		local h = math.min(160, #options * 27 + 8)
+		open = true
+		arrow.Text = "▴"
+		listFrame.Visible = true
+		listFrame.Size = UDim2.new(1, 0, 0, h)
+		holder.Size = UDim2.new(1, 0, 0, 48 + h + 4)
+		local stroke = btn:FindFirstChildOfClass("UIStroke")
+		if stroke then stroke.Color = Picon.Theme.Accent end
 		outsideConn = UserInputService.InputBegan:Connect(function(input)
 			if not open then return end
-			if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1
+				and input.UserInputType ~= Enum.UserInputType.Touch then
+				return
+			end
 			local p = input.Position
-			local lp, ls = listFrame.AbsolutePosition, listFrame.AbsoluteSize
-			local bp, bs = btn.AbsolutePosition, btn.AbsoluteSize
-			local inList = p.X >= lp.X and p.X <= lp.X + ls.X and p.Y >= lp.Y and p.Y <= lp.Y + ls.Y
-			local inBtn = p.X >= bp.X and p.X <= bp.X + bs.X and p.Y >= bp.Y and p.Y <= bp.Y + bs.Y
-			if not inList and not inBtn then closeList() end
+			local hp, hs = holder.AbsolutePosition, holder.AbsoluteSize
+			if p.X < hp.X or p.X > hp.X + hs.X or p.Y < hp.Y or p.Y > hp.Y + hs.Y then
+				closeList()
+			end
 		end)
 	end
 
 	btn.MouseButton1Click:Connect(openList)
 	holder.Destroying:Connect(function()
 		if outsideConn then outsideConn:Disconnect() end
-		if listFrame then listFrame:Destroy() end
 	end)
 
 	local obj = setmetatable({ Instance = holder }, Element)
-	function obj:Set(v) pick(v) end
+	function obj:Set(v)
+		current = v
+		valueLbl.Text = tostring(v)
+		if opts.Flag then Picon.SetFlag(opts.Flag, current) end
+		if opts.Callback then opts.Callback(current) end
+		rebuildItems()
+	end
 	function obj:Get() return current end
 	function obj:SetOptions(list)
 		options = list or {}
+		if open then rebuildItems() end
 	end
 	function obj:Close() closeList() end
 	if opts.Flag then Picon.SetFlag(opts.Flag, current) end
@@ -2110,7 +2120,7 @@ function Picon.new(opts)
 	-- Nav list (scrollable)
 	local navScroll = New("ScrollingFrame", {
 		Name = "Nav",
-		Size = UDim2.new(1, 0, 1, -52 - 78),
+		Size = UDim2.new(1, 0, 1, -52 - 54),
 		Position = UDim2.fromOffset(0, 52),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
@@ -2138,13 +2148,13 @@ function Picon.new(opts)
 	-- User card (bottom of sidebar)
 	local userCard = New("Frame", {
 		Name = "UserCard",
-		Size = UDim2.new(1, -12, 0, 64),
-		Position = UDim2.new(0, 6, 1, -72),
+		Size = UDim2.new(1, -10, 0, 44),
+		Position = UDim2.new(0, 5, 1, -50),
 		BackgroundColor3 = Picon.Theme.Tertiary,
 		BorderSizePixel = 0,
 		ZIndex = 4,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, 6) }),
+		New("UICorner", { CornerRadius = UDim.new(0, 5) }),
 		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	userCard.Parent = sidebar
@@ -2152,8 +2162,8 @@ function Picon.new(opts)
 
 	local avatar = New("ImageLabel", {
 		Name = "Avatar",
-		Size = UDim2.fromOffset(36, 36),
-		Position = UDim2.new(0, 10, 0.5, -18),
+		Size = UDim2.fromOffset(28, 28),
+		Position = UDim2.new(0, 8, 0.5, -14),
 		BackgroundColor3 = Picon.Theme.Secondary,
 		BorderSizePixel = 0,
 		Image = "",
@@ -2161,7 +2171,6 @@ function Picon.new(opts)
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 	avatar.Parent = userCard
 
-	-- async headshot
 	task.spawn(function()
 		local ok, content = pcall(function()
 			return Players:GetUserThumbnailAsync(
@@ -2173,15 +2182,16 @@ function Picon.new(opts)
 		if ok and content then avatar.Image = content end
 	end)
 
+	local realUserName = LocalPlayer.DisplayName or LocalPlayer.Name
 	local userNameLbl = New("TextLabel", {
 		Name = "UserName",
-		Size = UDim2.new(1, -56, 0, 18),
-		Position = UDim2.fromOffset(52, 12),
+		Size = UDim2.new(1, -44, 0, 14),
+		Position = UDim2.fromOffset(42, 6),
 		BackgroundTransparency = 1,
-		Text = LocalPlayer.DisplayName or LocalPlayer.Name,
+		Text = realUserName,
 		TextColor3 = Picon.Theme.Text,
 		Font = Picon.Theme.FontBold,
-		TextSize = 12,
+		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		ZIndex = 5,
@@ -2191,13 +2201,13 @@ function Picon.new(opts)
 
 	local uptimeLbl = New("TextLabel", {
 		Name = "Uptime",
-		Size = UDim2.new(1, -56, 0, 16),
-		Position = UDim2.fromOffset(52, 32),
+		Size = UDim2.new(1, -44, 0, 12),
+		Position = UDim2.fromOffset(42, 22),
 		BackgroundTransparency = 1,
 		Text = "00:00:00",
 		TextColor3 = Picon.Theme.SubText,
 		Font = Picon.Theme.Font,
-		TextSize = 11,
+		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ZIndex = 5,
 	})
@@ -2399,7 +2409,6 @@ function Picon.new(opts)
 		Visible = false,
 	}, {
 		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 6) }),
-		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	miniBtn.Parent = root
 	local autoTextSize = math.clamp(math.floor(math.min(miniSize.X, miniSize.Y) * 0.42), 10, 22)
@@ -2463,7 +2472,11 @@ function Picon.new(opts)
 
 	function self:SetUserNameVisible(v)
 		self._showUserName = not not v
-		userNameLbl.Visible = self._showUserName
+		if self._showUserName then
+			userNameLbl.Text = realUserName
+		else
+			userNameLbl.Text = "********"
+		end
 	end
 	function self:GetUserNameVisible()
 		return self._showUserName
