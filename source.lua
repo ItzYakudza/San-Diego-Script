@@ -17,7 +17,7 @@
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.4.0"
+Picon.Version = "2.0.0"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -33,7 +33,7 @@ local Camera = workspace.CurrentCamera
 ------------------------------------------------------------
 -- CONFIG / THEME
 ------------------------------------------------------------
-Picon.BaseResolution = Vector2.new(1280, 720)
+Picon.BaseResolution = Vector2.new(1920, 1080)
 Picon.MinScale = 0.85
 Picon.RootDisplayOrder = 999999999
 Picon.WindowTransparency = 0
@@ -1932,12 +1932,7 @@ function Picon.new(opts)
 		BorderSizePixel = 0,
 		Visible = false,
 	}, {
-		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 14) }),
-		New("UIStroke", {
-			Color = Picon.Theme.Accent,
-			Thickness = 2,
-			Transparency = math.clamp(winTransparency * 0.5, 0, 0.3),
-		}),
+		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 8) }),
 	})
 	miniBtn.Parent = root
 	-- TextSize / IconSize подстраиваются под размер mini-кнопки
