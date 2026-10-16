@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.11.1  (Neverlose-style)
+	Picon UI Library  v2.11.2  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -23,7 +23,7 @@
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.11.1"
+Picon.Version = "2.11.2"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -69,8 +69,11 @@ Picon.Theme = {
 
 Picon._Windows = {} -- live theme targets
 
-local RefreshGradients -- forward decl (defined with gradient helpers)
+local RefreshGradients -- forward decl
 local ButtonColorForStyle -- forward decl
+local ApplyButtonGradient -- forward decl
+local ApplySurfaceGradient -- forward decl
+local ApplyAccentGradient -- forward decl
 
 Picon.Themes = {
 	Default = {
@@ -168,7 +171,7 @@ local function ApplyThemeToInstance(root)
 	for _, d in ipairs(root:GetDescendants()) do
 		paint(d)
 	end
-	RefreshGradients(root)
+	if RefreshGradients then RefreshGradients(root) end
 end
 
 function Picon.SetTheme(nameOrTable)
@@ -193,12 +196,14 @@ function Picon.SetTheme(nameOrTable)
 			end
 			if w.Sidebar then ApplyThemeToInstance(w.Sidebar) end
 			-- repaint every button with PiconBtnStyle under this window
-			for _, d in ipairs(w.Instance:GetDescendants()) do
-				if d:IsA("GuiObject") and d:GetAttribute("PiconBtnStyle") then
-					local st = d:GetAttribute("PiconBtnStyle")
-					local c = ButtonColorForStyle(st)
-					d.BackgroundColor3 = c
-					ApplyButtonGradient(d, c, st)
+			if ButtonColorForStyle and ApplyButtonGradient then
+				for _, d in ipairs(w.Instance:GetDescendants()) do
+					if d:IsA("GuiObject") and d:GetAttribute("PiconBtnStyle") then
+						local st = d:GetAttribute("PiconBtnStyle")
+						local c = ButtonColorForStyle(st)
+						d.BackgroundColor3 = c
+						ApplyButtonGradient(d, c, st)
+					end
 				end
 			end
 			if typeof(w._applyThemeExtra) == "function" then
@@ -212,12 +217,14 @@ function Picon.SetTheme(nameOrTable)
 	if ScaleRootGlobal then
 		ApplyThemeToInstance(ScaleRootGlobal)
 		RefreshGradients(ScaleRootGlobal)
-		for _, d in ipairs(ScaleRootGlobal:GetDescendants()) do
-			if d:IsA("GuiObject") and d:GetAttribute("PiconBtnStyle") then
-				local st = d:GetAttribute("PiconBtnStyle")
-				local c = ButtonColorForStyle(st)
-				d.BackgroundColor3 = c
-				ApplyButtonGradient(d, c, st)
+		if ButtonColorForStyle and ApplyButtonGradient then
+			for _, d in ipairs(ScaleRootGlobal:GetDescendants()) do
+				if d:IsA("GuiObject") and d:GetAttribute("PiconBtnStyle") then
+					local st = d:GetAttribute("PiconBtnStyle")
+					local c = ButtonColorForStyle(st)
+					d.BackgroundColor3 = c
+					ApplyButtonGradient(d, c, st)
+				end
 			end
 		end
 	end
@@ -249,12 +256,22 @@ end
 function Picon.FlagsToJSON()
 	local out = {}
 	for k, v in pairs(Picon._Flags) do
-		if typeof(v) == "EnumItem" then
-			out[k] = { __enum = v.EnumType.Name, name = v.Name }
-		elseif typeof(v) == "Color3" then
+		local tv = typeof(v)
+		if tv == "EnumItem" then
+			-- Enum.KeyCode has no .Name — parse "Enum.KeyCode.Space"
+			local full = tostring(v) -- "Enum.KeyCode.Space"
+			local enumTypeName, itemName = full:match("^Enum%.(%w+)%.(.+)$")
+			if not enumTypeName then
+				enumTypeName = "KeyCode"
+				itemName = v.Name
+			end
+			out[k] = { __enum = enumTypeName, name = itemName or v.Name }
+		elseif tv == "Color3" then
 			out[k] = { __color = true, r = v.R, g = v.G, b = v.B }
-		else
+		elseif tv == "boolean" or tv == "number" or tv == "string" then
 			out[k] = v
+		else
+			-- skip unsupported (userdata, tables, etc.)
 		end
 	end
 	return HttpService:JSONEncode(out)
@@ -264,12 +281,15 @@ function Picon.FlagsFromJSON(json)
 	local ok, data = pcall(function() return HttpService:JSONDecode(json) end)
 	if not ok or typeof(data) ~= "table" then return end
 	for k, v in pairs(data) do
-		if typeof(v) == "table" and v.__enum then
+		if typeof(v) == "table" and v.__enum and v.name then
 			local et = Enum[v.__enum]
-			if et then Picon._Flags[k] = et[v.name] end
+			if et then
+				local item = et[v.name]
+				if item then Picon._Flags[k] = item end
+			end
 		elseif typeof(v) == "table" and v.__color then
-			Picon._Flags[k] = Color3.new(v.r, v.g, v.b)
-		else
+			Picon._Flags[k] = Color3.new(v.r or 0, v.g or 0, v.b or 0)
+		elseif typeof(v) == "boolean" or typeof(v) == "number" or typeof(v) == "string" then
 			Picon._Flags[k] = v
 		end
 	end
@@ -296,7 +316,7 @@ local function Tween(inst, info, props)
 end
 
 -- Soft top→bottom gradient for depth (does not fight with transparency)
-local function ApplySurfaceGradient(parent, strength)
+ApplySurfaceGradient = function(parent, strength)
 	strength = strength or 0.08
 	local existing = parent:FindFirstChild("_PiconGrad")
 	if existing then existing:Destroy() end
@@ -317,7 +337,7 @@ local function ApplySurfaceGradient(parent, strength)
 	return g
 end
 
-local function ApplyAccentGradient(parent)
+ApplyAccentGradient = function(parent)
 	local existing = parent:FindFirstChild("_PiconGrad")
 	if existing then existing:Destroy() end
 	local accent = Picon.Theme.Accent
@@ -350,7 +370,7 @@ ButtonColorForStyle = function(style)
 	return th.ButtonPrimary or th.Accent
 end
 
-local function ApplyButtonGradient(parent, baseColor, style)
+ApplyButtonGradient = function(parent, baseColor, style)
 	local existing = parent:FindFirstChild("_PiconGrad")
 	if existing then existing:Destroy() end
 	style = style or "primary"
@@ -394,19 +414,19 @@ RefreshGradients = function(root)
 	for _, item in ipairs(list) do
 		local parent, g = item.parent, item.grad
 		if parent and parent:IsA("GuiObject") then
-		local kind = g:GetAttribute("PiconGradKind") or "surface"
-		local style = g:GetAttribute("PiconGradStyle") or "secondary"
-		local strength = g:GetAttribute("PiconGradStrength") or 0.08
-		if kind == "accent" then
-			ApplyAccentGradient(parent)
-		elseif kind == "button" then
-			local btnStyle = parent:GetAttribute("PiconBtnStyle") or style
-			local base = ButtonColorForStyle(btnStyle)
-			parent.BackgroundColor3 = base
-			ApplyButtonGradient(parent, base, btnStyle)
-		else
-			ApplySurfaceGradient(parent, strength)
-		end
+			local kind = g:GetAttribute("PiconGradKind") or "surface"
+			local style = g:GetAttribute("PiconGradStyle") or "secondary"
+			local strength = g:GetAttribute("PiconGradStrength") or 0.08
+			if kind == "accent" then
+				ApplyAccentGradient(parent)
+			elseif kind == "button" then
+				local btnStyle = parent:GetAttribute("PiconBtnStyle") or style
+				local base = ButtonColorForStyle(btnStyle)
+				parent.BackgroundColor3 = base
+				ApplyButtonGradient(parent, base, btnStyle)
+			else
+				ApplySurfaceGradient(parent, strength)
+			end
 		end
 	end
 end
