@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.9.0  (Neverlose-style)
+	Picon UI Library  v2.10.0  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -23,7 +23,7 @@
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.9.0"
+Picon.Version = "2.10.0"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -47,18 +47,18 @@ Picon._CapturingKeybind = false
 Picon._Flags = {}          -- глобальное хранилище флагов
 Picon._NotifyStack = {}    -- активные нотификации
 
--- Neverlose-inspired flat dark theme
+-- Soft volumetric dark theme (easy on eyes, works with transparency)
 Picon.Theme = {
-	Background = Color3.fromRGB(14, 14, 16),
-	Secondary  = Color3.fromRGB(20, 20, 24),
-	Tertiary   = Color3.fromRGB(28, 28, 34),
-	Accent     = Color3.fromRGB(47, 128, 237),   -- Neverlose blue
-	Success    = Color3.fromRGB(52, 199, 89),
-	Warning    = Color3.fromRGB(255, 159, 10),
-	Error      = Color3.fromRGB(255, 69, 58),
-	Text       = Color3.fromRGB(240, 240, 245),
-	SubText    = Color3.fromRGB(175, 175, 185),
-	Stroke     = Color3.fromRGB(42, 42, 50),
+	Background = Color3.fromRGB(18, 18, 22),
+	Secondary  = Color3.fromRGB(24, 24, 30),
+	Tertiary   = Color3.fromRGB(34, 34, 42),
+	Accent     = Color3.fromRGB(72, 138, 232),
+	Success    = Color3.fromRGB(72, 187, 120),
+	Warning    = Color3.fromRGB(232, 168, 64),
+	Error      = Color3.fromRGB(224, 90, 90),
+	Text       = Color3.fromRGB(232, 234, 240),
+	SubText    = Color3.fromRGB(148, 152, 168),
+	Stroke     = Color3.fromRGB(48, 50, 60),
 	Font       = Enum.Font.GothamMedium,
 	FontBold   = Enum.Font.GothamBold,
 }
@@ -67,52 +67,52 @@ Picon._Windows = {} -- live theme targets
 
 Picon.Themes = {
 	Default = {
-		Background = Color3.fromRGB(14, 14, 16),
-		Secondary  = Color3.fromRGB(20, 20, 24),
-		Tertiary   = Color3.fromRGB(28, 28, 34),
-		Accent     = Color3.fromRGB(47, 128, 237),
-		Success    = Color3.fromRGB(52, 199, 89),
-		Warning    = Color3.fromRGB(255, 159, 10),
-		Error      = Color3.fromRGB(255, 69, 58),
-		Text       = Color3.fromRGB(240, 240, 245),
-		SubText    = Color3.fromRGB(175, 175, 185),
-		Stroke     = Color3.fromRGB(42, 42, 50),
+		Background = Color3.fromRGB(18, 18, 22),
+		Secondary  = Color3.fromRGB(24, 24, 30),
+		Tertiary   = Color3.fromRGB(34, 34, 42),
+		Accent     = Color3.fromRGB(72, 138, 232),
+		Success    = Color3.fromRGB(72, 187, 120),
+		Warning    = Color3.fromRGB(232, 168, 64),
+		Error      = Color3.fromRGB(224, 90, 90),
+		Text       = Color3.fromRGB(232, 234, 240),
+		SubText    = Color3.fromRGB(148, 152, 168),
+		Stroke     = Color3.fromRGB(48, 50, 60),
 	},
 	Midnight = {
-		Background = Color3.fromRGB(10, 10, 14),
-		Secondary  = Color3.fromRGB(16, 16, 22),
-		Tertiary   = Color3.fromRGB(24, 24, 32),
-		Accent     = Color3.fromRGB(47, 128, 237),
-		Success    = Color3.fromRGB(52, 199, 89),
-		Warning    = Color3.fromRGB(255, 159, 10),
-		Error      = Color3.fromRGB(255, 69, 58),
-		Text       = Color3.fromRGB(240, 240, 245),
-		SubText    = Color3.fromRGB(170, 170, 185),
-		Stroke     = Color3.fromRGB(38, 38, 48),
+		Background = Color3.fromRGB(14, 14, 18),
+		Secondary  = Color3.fromRGB(20, 20, 26),
+		Tertiary   = Color3.fromRGB(30, 30, 38),
+		Accent     = Color3.fromRGB(72, 138, 232),
+		Success    = Color3.fromRGB(72, 187, 120),
+		Warning    = Color3.fromRGB(232, 168, 64),
+		Error      = Color3.fromRGB(224, 90, 90),
+		Text       = Color3.fromRGB(230, 232, 240),
+		SubText    = Color3.fromRGB(140, 144, 160),
+		Stroke     = Color3.fromRGB(44, 46, 56),
 	},
 	Ocean = {
-		Background = Color3.fromRGB(12, 16, 22),
-		Secondary  = Color3.fromRGB(18, 24, 32),
-		Tertiary   = Color3.fromRGB(26, 34, 44),
-		Accent     = Color3.fromRGB(14, 165, 233),
-		Success    = Color3.fromRGB(34, 197, 94),
-		Warning    = Color3.fromRGB(234, 179, 8),
-		Error      = Color3.fromRGB(239, 68, 68),
-		Text       = Color3.fromRGB(230, 236, 242),
-		SubText    = Color3.fromRGB(140, 155, 170),
-		Stroke     = Color3.fromRGB(36, 46, 58),
+		Background = Color3.fromRGB(14, 18, 24),
+		Secondary  = Color3.fromRGB(20, 26, 34),
+		Tertiary   = Color3.fromRGB(28, 36, 48),
+		Accent     = Color3.fromRGB(56, 168, 220),
+		Success    = Color3.fromRGB(64, 180, 120),
+		Warning    = Color3.fromRGB(220, 176, 56),
+		Error      = Color3.fromRGB(220, 88, 88),
+		Text       = Color3.fromRGB(228, 234, 242),
+		SubText    = Color3.fromRGB(132, 148, 164),
+		Stroke     = Color3.fromRGB(40, 52, 64),
 	},
 	Rose = {
-		Background = Color3.fromRGB(18, 12, 16),
-		Secondary  = Color3.fromRGB(26, 18, 22),
-		Tertiary   = Color3.fromRGB(36, 26, 32),
-		Accent     = Color3.fromRGB(244, 63, 94),
-		Success    = Color3.fromRGB(74, 222, 128),
-		Warning    = Color3.fromRGB(251, 146, 60),
-		Error      = Color3.fromRGB(239, 68, 68),
-		Text       = Color3.fromRGB(245, 235, 240),
-		SubText    = Color3.fromRGB(170, 150, 160),
-		Stroke     = Color3.fromRGB(48, 34, 42),
+		Background = Color3.fromRGB(20, 16, 18),
+		Secondary  = Color3.fromRGB(28, 22, 26),
+		Tertiary   = Color3.fromRGB(40, 30, 36),
+		Accent     = Color3.fromRGB(220, 96, 128),
+		Success    = Color3.fromRGB(80, 180, 120),
+		Warning    = Color3.fromRGB(232, 160, 80),
+		Error      = Color3.fromRGB(220, 88, 88),
+		Text       = Color3.fromRGB(240, 232, 236),
+		SubText    = Color3.fromRGB(160, 144, 152),
+		Stroke     = Color3.fromRGB(52, 40, 46),
 	},
 }
 
@@ -233,6 +233,70 @@ local function Tween(inst, info, props)
 	local t = TweenService:Create(inst, info, props)
 	t:Play()
 	return t
+end
+
+-- Soft top→bottom gradient for depth (does not fight with transparency)
+local function ApplySurfaceGradient(parent, strength)
+	strength = strength or 0.08
+	local existing = parent:FindFirstChild("_PiconGrad")
+	if existing then existing:Destroy() end
+	local top = Picon.Theme.Secondary:Lerp(Color3.new(1, 1, 1), strength)
+	local bot = Picon.Theme.Background:Lerp(Color3.new(0, 0, 0), strength * 0.6)
+	local g = New("UIGradient", {
+		Name = "_PiconGrad",
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, top),
+			ColorSequenceKeypoint.new(0.45, Picon.Theme.Secondary),
+			ColorSequenceKeypoint.new(1, bot),
+		}),
+	})
+	g.Parent = parent
+	return g
+end
+
+local function ApplyAccentGradient(parent)
+	local existing = parent:FindFirstChild("_PiconGrad")
+	if existing then existing:Destroy() end
+	local accent = Picon.Theme.Accent
+	local light = accent:Lerp(Color3.new(1, 1, 1), 0.22)
+	local deep = accent:Lerp(Color3.new(0, 0, 0), 0.18)
+	local g = New("UIGradient", {
+		Name = "_PiconGrad",
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, light),
+			ColorSequenceKeypoint.new(0.55, accent),
+			ColorSequenceKeypoint.new(1, deep),
+		}),
+	})
+	g.Parent = parent
+	return g
+end
+
+local function ApplyButtonGradient(parent, baseColor, style)
+	local existing = parent:FindFirstChild("_PiconGrad")
+	if existing then existing:Destroy() end
+	style = style or "primary"
+	local light, deep
+	if style == "primary" or style == "danger" then
+		light = baseColor:Lerp(Color3.new(1, 1, 1), 0.18)
+		deep = baseColor:Lerp(Color3.new(0, 0, 0), 0.22)
+	else
+		light = baseColor:Lerp(Color3.new(1, 1, 1), 0.1)
+		deep = baseColor:Lerp(Color3.new(0, 0, 0), 0.12)
+	end
+	local g = New("UIGradient", {
+		Name = "_PiconGrad",
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, light),
+			ColorSequenceKeypoint.new(0.5, baseColor),
+			ColorSequenceKeypoint.new(1, deep),
+		}),
+	})
+	g.Parent = parent
+	return g
 end
 
 local CurrentUIScale = 1
@@ -617,46 +681,50 @@ function Container:AddButton(opts)
 		end
 	end
 	local children = {
-		New("UICorner", { CornerRadius = UDim.new(0, opts.CornerRadius or 4) }),
+		New("UICorner", { CornerRadius = UDim.new(0, opts.CornerRadius or 5) }),
+		New("UIStroke", {
+			Color = (style == "primary") and color:Lerp(Color3.new(1, 1, 1), 0.15) or Picon.Theme.Stroke,
+			Thickness = 1,
+			Transparency = (style == "ghost") and 0.35 or 0.55,
+		}),
 	}
-	if style == "ghost" or style == "secondary" then
-		table.insert(children, New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }))
-	end
+	local btnTrans = (style == "ghost") and 0.55 or 0
 	local btn = New("TextButton", {
 		Name = opts.Name or "Button",
 		Size = opts.FillWidth and UDim2.new(1, 0, 0, size.Y) or UDim2.fromOffset(size.X, size.Y),
 		Position = UDim2.fromOffset(pos.X, pos.Y),
 		BackgroundColor3 = color,
-		BackgroundTransparency = (style == "ghost") and 0.4 or 0,
+		BackgroundTransparency = btnTrans,
 		AutoButtonColor = false,
 		Text = "",
 		BorderSizePixel = 0,
 		LayoutOrder = opts.LayoutOrder or 0,
 	}, children)
 	btn.Parent = self.Content or self.Instance
+	ApplyButtonGradient(btn, color, style)
 	local visOpts = {}
 	for k, v in pairs(opts) do visOpts[k] = v end
 	visOpts.TextColor = textColor
 	PopulateButtonVisual(btn, visOpts, size)
 	AttachTooltip(btn, opts.Tooltip)
-	local baseTrans = btn.BackgroundTransparency
+	-- Hover via color lerp only — transparency stays stable (works with window fade)
 	btn.MouseEnter:Connect(function()
-		Tween(btn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), 0.1),
-			BackgroundTransparency = math.max(0, baseTrans - 0.15),
+		Tween(btn, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			BackgroundColor3 = color:Lerp(Color3.new(1, 1, 1), 0.12),
 		})
 	end)
 	btn.MouseLeave:Connect(function()
-		Tween(btn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Tween(btn, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			BackgroundColor3 = color,
-			BackgroundTransparency = baseTrans,
 		})
 	end)
 	btn.MouseButton1Down:Connect(function()
-		Tween(btn, TweenInfo.new(0.06), { BackgroundTransparency = math.min(0.35, baseTrans + 0.1) })
+		Tween(btn, TweenInfo.new(0.06), {
+			BackgroundColor3 = color:Lerp(Color3.new(0, 0, 0), 0.12),
+		})
 	end)
 	btn.MouseButton1Up:Connect(function()
-		Tween(btn, TweenInfo.new(0.08), { BackgroundTransparency = baseTrans })
+		Tween(btn, TweenInfo.new(0.08), { BackgroundColor3 = color })
 	end)
 	if opts.Callback then
 		btn.MouseButton1Click:Connect(opts.Callback)
@@ -742,20 +810,28 @@ function Container:AddToggle(opts)
 		TextSize = opts.TextSize or 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	}).Parent = holder
-	-- Neverlose-style compact pill toggle
+	-- Soft pill toggle with gradient
 	local track = New("Frame", {
-		Size = UDim2.fromOffset(36, 18),
-		Position = UDim2.new(1, -36, 0.5, -9),
+		Size = UDim2.fromOffset(38, 20),
+		Position = UDim2.new(1, -38, 0.5, -10),
 		BackgroundColor3 = state and Picon.Theme.Accent or Picon.Theme.Tertiary,
 		BorderSizePixel = 0,
-	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	}, {
+		New("UICorner", { CornerRadius = UDim.new(1, 0) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1, Transparency = 0.5 }),
+	})
 	track.Parent = holder
+	if state then ApplyAccentGradient(track) else ApplyButtonGradient(track, Picon.Theme.Tertiary, "secondary") end
 	local knob = New("Frame", {
-		Size = UDim2.fromOffset(14, 14),
-		Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
-		BackgroundColor3 = Color3.fromRGB(245, 245, 250),
+		Size = UDim2.fromOffset(16, 16),
+		Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
+		BackgroundColor3 = Color3.fromRGB(240, 242, 248),
 		BorderSizePixel = 0,
-	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+		ZIndex = 2,
+	}, {
+		New("UICorner", { CornerRadius = UDim.new(1, 0) }),
+		New("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 1, Transparency = 0.7 }),
+	})
 	knob.Parent = track
 	local click = New("TextButton", {
 		Size = UDim2.fromScale(1, 1),
@@ -766,16 +842,17 @@ function Container:AddToggle(opts)
 	AttachTooltip(holder, opts.Tooltip)
 
 	local obj = setmetatable({ Instance = holder }, Element)
-	function obj:Set(v)
+	function obj:Set(v, silent)
 		state = not not v
-		Tween(track, TweenInfo.new(0.12), {
+		Tween(track, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			BackgroundColor3 = state and Picon.Theme.Accent or Picon.Theme.Tertiary,
 		})
-		Tween(knob, TweenInfo.new(0.12), {
-			Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
+		if state then ApplyAccentGradient(track) else ApplyButtonGradient(track, Picon.Theme.Tertiary, "secondary") end
+		Tween(knob, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
 		})
 		if opts.Flag then Picon.SetFlag(opts.Flag, state) end
-		if opts.Callback then opts.Callback(state) end
+		if not silent and opts.Callback then opts.Callback(state) end
 	end
 	function obj:Get() return state end
 	click.MouseButton1Click:Connect(function() obj:Set(not state) end)
@@ -1012,28 +1089,36 @@ function Container:AddSlider(opts)
 		TextXAlignment = Enum.TextXAlignment.Right,
 	})
 	valueLabel.Parent = holder
-	-- thin Neverlose-style track
+	-- Soft track + gradient fill
 	local track = New("Frame", {
-		Size = UDim2.new(1, 0, 0, 4),
+		Size = UDim2.new(1, 0, 0, 5),
 		Position = UDim2.new(0, 0, 0, 26),
 		BackgroundColor3 = Picon.Theme.Tertiary,
 		BorderSizePixel = 0,
-	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	}, {
+		New("UICorner", { CornerRadius = UDim.new(1, 0) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1, Transparency = 0.6 }),
+	})
 	track.Parent = holder
+	local fillColor = opts.Color or Picon.Theme.Accent
 	local fill = New("Frame", {
 		Size = UDim2.new((value - minV) / math.max(maxV - minV, 1e-6), 0, 1, 0),
-		BackgroundColor3 = opts.Color or Picon.Theme.Accent,
+		BackgroundColor3 = fillColor,
 		BorderSizePixel = 0,
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 	fill.Parent = track
+	ApplyAccentGradient(fill)
 	local knob = New("Frame", {
-		Size = UDim2.fromOffset(12, 12),
+		Size = UDim2.fromOffset(13, 13),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new((value - minV) / math.max(maxV - minV, 1e-6), 0, 0.5, 0),
-		BackgroundColor3 = Color3.fromRGB(245, 245, 250),
+		BackgroundColor3 = Color3.fromRGB(240, 242, 248),
 		BorderSizePixel = 0,
 		ZIndex = 2,
-	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	}, {
+		New("UICorner", { CornerRadius = UDim.new(1, 0) }),
+		New("UIStroke", { Color = fillColor, Thickness = 1.5, Transparency = 0.25 }),
+	})
 	knob.Parent = track
 	AttachTooltip(holder, opts.Tooltip)
 
@@ -1084,7 +1169,7 @@ function Container:AddSlider(opts)
 	end)
 
 	local obj = setmetatable({ Instance = holder }, Element)
-	function obj:Set(v) apply(v, true) end
+	function obj:Set(v, silent) apply(v, not silent) end
 	function obj:Get() return value end
 	if opts.Flag then Picon.SetFlag(opts.Flag, value) end
 	return obj
@@ -1130,11 +1215,12 @@ function Container:AddDropdown(opts)
 		BorderSizePixel = 0,
 		ZIndex = 6,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, 4) }),
-		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
+		New("UICorner", { CornerRadius = UDim.new(0, 5) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1, Transparency = 0.4 }),
 	})
 	btn.Parent = holder
 	btn:SetAttribute("PiconRole", "Tertiary")
+	ApplyButtonGradient(btn, Picon.Theme.Tertiary, "secondary")
 
 	local valueLbl = New("TextLabel", {
 		Size = UDim2.new(1, -32, 1, 0),
@@ -1326,11 +1412,11 @@ function Container:AddDropdown(opts)
 	end)
 
 	local obj = setmetatable({ Instance = holder }, Element)
-	function obj:Set(v)
+	function obj:Set(v, silent)
 		current = v
 		valueLbl.Text = tostring(v)
 		if opts.Flag then Picon.SetFlag(opts.Flag, current) end
-		if opts.Callback then opts.Callback(current) end
+		if not silent and opts.Callback then opts.Callback(current) end
 	end
 	function obj:Get() return current end
 	function obj:SetOptions(list)
@@ -1831,9 +1917,10 @@ function Picon.Notify(opts)
 	local color = opts.Color or Picon.Theme.Accent
 	local transparency = opts.Transparency
 	if transparency == nil then
-		transparency = math.clamp(Picon.WindowTransparency or 0, 0, 0.85)
+		-- Soft glass, but never wash out text
+		transparency = math.clamp((Picon.WindowTransparency or 0) * 0.45, 0.08, 0.28)
 	end
-	local strokeTarget = math.clamp(transparency * 0.55, 0, 0.5)
+	local strokeTarget = math.clamp(0.2 + transparency * 0.3, 0.2, 0.45)
 
 	-- Лимит стека
 	while #Picon._NotifyStack >= MAX_NOTIFIES do
@@ -1857,6 +1944,7 @@ function Picon.Notify(opts)
 	local cardStroke = card:FindFirstChildOfClass("UIStroke")
 	if cardStroke then cardStroke:SetAttribute("PiconRole", "Stroke") end
 	card.Parent = NotifyContainer
+	ApplySurfaceGradient(card, 0.07)
 	table.insert(Picon._NotifyStack, card)
 
 	local inner = New("Frame", {
@@ -2120,11 +2208,12 @@ function Picon.new(opts)
 		ClipsDescendants = true,
 		Visible = false,
 	}, {
-		New("UICorner", { CornerRadius = UDim.new(0, 6) }),
-		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
+		New("UICorner", { CornerRadius = UDim.new(0, 8) }),
+		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1, Transparency = 0.25 }),
 	})
 	main.Parent = root
 	main:SetAttribute("PiconRole", "Background")
+	ApplySurfaceGradient(main, 0.06)
 
 	local winScale = New("UIScale", { Scale = 0.96 })
 	winScale.Parent = main
@@ -2140,10 +2229,12 @@ function Picon.new(opts)
 	})
 	sidebar.Parent = main
 	sidebar:SetAttribute("PiconRole", "Secondary")
+	ApplySurfaceGradient(sidebar, 0.05)
 	New("Frame", {
 		Size = UDim2.new(0, 1, 1, 0),
 		Position = UDim2.new(1, -1, 0, 0),
 		BackgroundColor3 = Picon.Theme.Stroke,
+		BackgroundTransparency = 0.35,
 		BorderSizePixel = 0,
 		ZIndex = 3,
 	}).Parent = sidebar
@@ -2219,6 +2310,7 @@ function Picon.new(opts)
 	})
 	userCard.Parent = sidebar
 	userCard:SetAttribute("PiconRole", "Tertiary")
+	ApplyButtonGradient(userCard, Picon.Theme.Tertiary, "secondary")
 
 	local avatar = New("ImageLabel", {
 		Name = "Avatar",
@@ -2305,6 +2397,7 @@ function Picon.new(opts)
 		ZIndex = 5,
 	})
 	titleBar.Parent = right
+	ApplySurfaceGradient(titleBar, 0.04)
 	New("Frame", {
 		Size = UDim2.new(1, 0, 0, 1),
 		Position = UDim2.new(0, 0, 1, -1),
@@ -2469,9 +2562,9 @@ function Picon.new(opts)
 		Visible = false,
 	}, {
 		New("UICorner", { CornerRadius = miniOpts.CornerRadius or UDim.new(0, 6) }),
-		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	miniBtn.Parent = root
+	ApplyButtonGradient(miniBtn, miniColor, "secondary")
 	local autoTextSize = math.clamp(math.floor(math.min(miniSize.X, miniSize.Y) * 0.42), 10, 22)
 	local autoIcon = math.max(math.floor(math.min(miniSize.X, miniSize.Y) - 12), 12)
 	PopulateButtonVisual(miniBtn, {
@@ -2622,14 +2715,16 @@ function Picon.new(opts)
 	function self:GetToggleKey() return self._toggleKey end
 
 	function self:SetTransparency(tr)
-		self._transparency = math.clamp(tr, 0, 1)
+		-- Cap shell fade so content stays readable; interactive widgets stay solid
+		self._transparency = math.clamp(tr, 0, 0.55)
 		Picon.WindowTransparency = self._transparency
 		if self.IsOpen then
 			self.Instance.BackgroundTransparency = self._transparency
 			sidebar.BackgroundTransparency = self._transparency
-			titleBar.BackgroundTransparency = self._transparency
+			titleBar.BackgroundTransparency = math.min(self._transparency + 0.05, 0.6)
 		end
-		self.MiniButtonInstance.BackgroundTransparency = self._transparency
+		-- Mini stays more solid than the window shell
+		self.MiniButtonInstance.BackgroundTransparency = math.min(self._transparency * 0.5, 0.25)
 	end
 
 	function self:SetMiniPosition(side)
