@@ -1,5 +1,5 @@
 --[[
-	Picon UI Library  v2.11.2  (Neverlose-style)
+	Picon UI Library  v2.11.3  (Neverlose-style)
 	------------------------------------------------------------
 	Удобства:
 	 • Вкладки (Tabs)
@@ -23,7 +23,7 @@
 
 local Picon = {}
 Picon.__index = Picon
-Picon.Version = "2.11.2"
+Picon.Version = "2.11.3"
 
 ------------------------------------------------------------
 -- SERVICES
@@ -49,20 +49,20 @@ Picon._NotifyStack = {}    -- активные нотификации
 
 -- Soft volumetric dark theme (easy on eyes, works with transparency)
 Picon.Theme = {
-	Background = Color3.fromRGB(18, 18, 22),
-	Secondary  = Color3.fromRGB(24, 24, 30),
-	Tertiary   = Color3.fromRGB(34, 34, 42),
-	Accent     = Color3.fromRGB(72, 138, 232),
-	Success    = Color3.fromRGB(72, 187, 120),
-	Warning    = Color3.fromRGB(232, 168, 64),
-	Error      = Color3.fromRGB(224, 90, 90),
-	Text       = Color3.fromRGB(232, 234, 240),
-	SubText    = Color3.fromRGB(148, 152, 168),
-	Stroke     = Color3.fromRGB(48, 50, 60),
-	ButtonPrimary   = Color3.fromRGB(72, 138, 232),
-	ButtonSecondary = Color3.fromRGB(48, 72, 112),
-	ButtonGhost     = Color3.fromRGB(36, 44, 58),
-	ButtonDanger    = Color3.fromRGB(56, 88, 160),
+	Background = Color3.fromRGB(28, 28, 34),
+	Secondary  = Color3.fromRGB(36, 36, 44),
+	Tertiary   = Color3.fromRGB(48, 48, 58),
+	Accent     = Color3.fromRGB(88, 152, 240),
+	Success    = Color3.fromRGB(88, 200, 130),
+	Warning    = Color3.fromRGB(240, 180, 72),
+	Error      = Color3.fromRGB(232, 100, 100),
+	Text       = Color3.fromRGB(240, 242, 248),
+	SubText    = Color3.fromRGB(168, 172, 188),
+	Stroke     = Color3.fromRGB(64, 66, 78),
+	ButtonPrimary   = Color3.fromRGB(88, 152, 240),
+	ButtonSecondary = Color3.fromRGB(64, 92, 140),
+	ButtonGhost     = Color3.fromRGB(48, 56, 72),
+	ButtonDanger    = Color3.fromRGB(72, 110, 180),
 	Font       = Enum.Font.GothamMedium,
 	FontBold   = Enum.Font.GothamBold,
 }
@@ -77,70 +77,79 @@ local ApplyAccentGradient -- forward decl
 
 Picon.Themes = {
 	Default = {
-		Background = Color3.fromRGB(18, 18, 22),
-		Secondary  = Color3.fromRGB(24, 24, 30),
-		Tertiary   = Color3.fromRGB(34, 34, 42),
-		Accent     = Color3.fromRGB(72, 138, 232),
-		Success    = Color3.fromRGB(72, 187, 120),
-		Warning    = Color3.fromRGB(232, 168, 64),
-		Error      = Color3.fromRGB(224, 90, 90),
-		Text       = Color3.fromRGB(232, 234, 240),
-		SubText    = Color3.fromRGB(148, 152, 168),
-		Stroke     = Color3.fromRGB(48, 50, 60),
-		ButtonPrimary   = Color3.fromRGB(72, 138, 232),
-		ButtonSecondary = Color3.fromRGB(48, 72, 112),
-		ButtonGhost     = Color3.fromRGB(36, 44, 58),
-		ButtonDanger    = Color3.fromRGB(56, 88, 160),
+		Background = Color3.fromRGB(28, 28, 34),
+		Secondary  = Color3.fromRGB(36, 36, 44),
+		Tertiary   = Color3.fromRGB(48, 48, 58),
+		Accent     = Color3.fromRGB(88, 152, 240),
+		Success    = Color3.fromRGB(88, 200, 130),
+		Warning    = Color3.fromRGB(240, 180, 72),
+		Error      = Color3.fromRGB(232, 100, 100),
+		Text       = Color3.fromRGB(240, 242, 248),
+		SubText    = Color3.fromRGB(168, 172, 188),
+		Stroke     = Color3.fromRGB(64, 66, 78),
+		ButtonPrimary   = Color3.fromRGB(88, 152, 240),
+		ButtonSecondary = Color3.fromRGB(64, 92, 140),
+		ButtonGhost     = Color3.fromRGB(48, 56, 72),
+		ButtonDanger    = Color3.fromRGB(72, 110, 180),
 	},
 	Midnight = {
-		Background = Color3.fromRGB(14, 14, 20),
-		Secondary  = Color3.fromRGB(20, 18, 28),
-		Tertiary   = Color3.fromRGB(30, 26, 42),
-		Accent     = Color3.fromRGB(132, 96, 220),
-		Success    = Color3.fromRGB(96, 180, 140),
-		Warning    = Color3.fromRGB(220, 160, 80),
-		Error      = Color3.fromRGB(200, 96, 120),
-		Text       = Color3.fromRGB(230, 228, 240),
-		SubText    = Color3.fromRGB(148, 140, 168),
-		Stroke     = Color3.fromRGB(48, 42, 64),
-		ButtonPrimary   = Color3.fromRGB(132, 96, 220),
-		ButtonSecondary = Color3.fromRGB(72, 56, 120),
-		ButtonGhost     = Color3.fromRGB(40, 34, 56),
-		ButtonDanger    = Color3.fromRGB(100, 64, 168),
+		Background = Color3.fromRGB(26, 24, 36),
+		Secondary  = Color3.fromRGB(34, 30, 48),
+		Tertiary   = Color3.fromRGB(48, 42, 68),
+		Accent     = Color3.fromRGB(156, 120, 240),
+		Success    = Color3.fromRGB(110, 196, 150),
+		Warning    = Color3.fromRGB(236, 176, 90),
+		Error      = Color3.fromRGB(220, 110, 140),
+		Text       = Color3.fromRGB(238, 236, 248),
+		SubText    = Color3.fromRGB(170, 162, 196),
+		Stroke     = Color3.fromRGB(68, 58, 90),
+		ButtonPrimary   = Color3.fromRGB(156, 120, 240),
+		ButtonSecondary = Color3.fromRGB(96, 78, 150),
+		ButtonGhost     = Color3.fromRGB(52, 46, 72),
+		ButtonDanger    = Color3.fromRGB(128, 88, 200),
 	},
 	Ocean = {
-		Background = Color3.fromRGB(14, 18, 24),
-		Secondary  = Color3.fromRGB(20, 26, 34),
-		Tertiary   = Color3.fromRGB(28, 36, 48),
-		Accent     = Color3.fromRGB(56, 168, 220),
-		Success    = Color3.fromRGB(64, 180, 120),
-		Warning    = Color3.fromRGB(220, 176, 56),
-		Error      = Color3.fromRGB(220, 88, 88),
-		Text       = Color3.fromRGB(228, 234, 242),
-		SubText    = Color3.fromRGB(132, 148, 164),
-		Stroke     = Color3.fromRGB(40, 52, 64),
-		ButtonPrimary   = Color3.fromRGB(56, 168, 220),
-		ButtonSecondary = Color3.fromRGB(40, 88, 120),
-		ButtonGhost     = Color3.fromRGB(28, 40, 52),
-		ButtonDanger    = Color3.fromRGB(48, 120, 168),
+		Background = Color3.fromRGB(22, 30, 40),
+		Secondary  = Color3.fromRGB(30, 40, 52),
+		Tertiary   = Color3.fromRGB(42, 54, 70),
+		Accent     = Color3.fromRGB(72, 188, 236),
+		Success    = Color3.fromRGB(80, 196, 140),
+		Warning    = Color3.fromRGB(236, 192, 72),
+		Error      = Color3.fromRGB(232, 100, 100),
+		Text       = Color3.fromRGB(236, 242, 248),
+		SubText    = Color3.fromRGB(150, 168, 186),
+		Stroke     = Color3.fromRGB(56, 70, 88),
+		ButtonPrimary   = Color3.fromRGB(72, 188, 236),
+		ButtonSecondary = Color3.fromRGB(52, 110, 148),
+		ButtonGhost     = Color3.fromRGB(38, 52, 66),
+		ButtonDanger    = Color3.fromRGB(64, 148, 200),
 	},
 	Rose = {
-		Background = Color3.fromRGB(20, 16, 18),
-		Secondary  = Color3.fromRGB(28, 22, 26),
-		Tertiary   = Color3.fromRGB(40, 30, 36),
-		Accent     = Color3.fromRGB(220, 96, 128),
-		Success    = Color3.fromRGB(80, 180, 120),
-		Warning    = Color3.fromRGB(232, 160, 80),
-		Error      = Color3.fromRGB(220, 88, 88),
-		Text       = Color3.fromRGB(240, 232, 236),
-		SubText    = Color3.fromRGB(160, 144, 152),
-		Stroke     = Color3.fromRGB(52, 40, 46),
-		ButtonPrimary   = Color3.fromRGB(220, 96, 128),
-		ButtonSecondary = Color3.fromRGB(120, 56, 72),
-		ButtonGhost     = Color3.fromRGB(44, 32, 38),
-		ButtonDanger    = Color3.fromRGB(176, 72, 96),
+		Background = Color3.fromRGB(32, 24, 28),
+		Secondary  = Color3.fromRGB(42, 32, 38),
+		Tertiary   = Color3.fromRGB(58, 42, 50),
+		Accent     = Color3.fromRGB(236, 118, 150),
+		Success    = Color3.fromRGB(96, 196, 140),
+		Warning    = Color3.fromRGB(240, 176, 96),
+		Error      = Color3.fromRGB(232, 100, 100),
+		Text       = Color3.fromRGB(248, 238, 242),
+		SubText    = Color3.fromRGB(180, 160, 170),
+		Stroke     = Color3.fromRGB(72, 54, 62),
+		ButtonPrimary   = Color3.fromRGB(236, 118, 150),
+		ButtonSecondary = Color3.fromRGB(148, 72, 96),
+		ButtonGhost     = Color3.fromRGB(56, 42, 50),
+		ButtonDanger    = Color3.fromRGB(200, 90, 120),
 	},
 }
+
+
+-- Lighten surface colors when window is transparent (avoids muddy look over game)
+local function LiftForTransparency(c)
+	local tr = Picon.WindowTransparency or 0
+	if tr <= 0.01 then return c end
+	-- blend toward a soft light gray-blue
+	return c:Lerp(Color3.fromRGB(210, 212, 220), tr * 0.4)
+end
 
 local function ApplyThemeToInstance(root)
 	if not root then return end
@@ -148,15 +157,17 @@ local function ApplyThemeToInstance(root)
 		local role = d:GetAttribute("PiconRole")
 		if not role then return end
 		if role == "Background" and d:IsA("GuiObject") then
-			d.BackgroundColor3 = Picon.Theme.Background
+			d.BackgroundColor3 = LiftForTransparency(Picon.Theme.Background)
 		elseif role == "Secondary" and d:IsA("GuiObject") then
-			d.BackgroundColor3 = Picon.Theme.Secondary
+			d.BackgroundColor3 = LiftForTransparency(Picon.Theme.Secondary)
 		elseif role == "Tertiary" and d:IsA("GuiObject") then
-			d.BackgroundColor3 = Picon.Theme.Tertiary
+			d.BackgroundColor3 = LiftForTransparency(Picon.Theme.Tertiary)
 		elseif role == "Accent" and d:IsA("GuiObject") then
 			d.BackgroundColor3 = Picon.Theme.Accent
+		elseif role == "AccentStroke" and d:IsA("UIStroke") then
+			d.Color = Picon.Theme.Accent
 		elseif role == "Stroke" and d:IsA("UIStroke") then
-			d.Color = Picon.Theme.Stroke
+			d.Color = LiftForTransparency(Picon.Theme.Stroke)
 		elseif role == "Text" and (d:IsA("TextLabel") or d:IsA("TextButton") or d:IsA("TextBox")) then
 			d.TextColor3 = Picon.Theme.Text
 		elseif role == "SubText" and (d:IsA("TextLabel") or d:IsA("TextButton") or d:IsA("TextBox")) then
@@ -414,19 +425,19 @@ RefreshGradients = function(root)
 	for _, item in ipairs(list) do
 		local parent, g = item.parent, item.grad
 		if parent and parent:IsA("GuiObject") then
-			local kind = g:GetAttribute("PiconGradKind") or "surface"
-			local style = g:GetAttribute("PiconGradStyle") or "secondary"
-			local strength = g:GetAttribute("PiconGradStrength") or 0.08
-			if kind == "accent" then
-				ApplyAccentGradient(parent)
-			elseif kind == "button" then
-				local btnStyle = parent:GetAttribute("PiconBtnStyle") or style
-				local base = ButtonColorForStyle(btnStyle)
-				parent.BackgroundColor3 = base
-				ApplyButtonGradient(parent, base, btnStyle)
-			else
-				ApplySurfaceGradient(parent, strength)
-			end
+		local kind = g:GetAttribute("PiconGradKind") or "surface"
+		local style = g:GetAttribute("PiconGradStyle") or "secondary"
+		local strength = g:GetAttribute("PiconGradStrength") or 0.08
+		if kind == "accent" then
+			ApplyAccentGradient(parent)
+		elseif kind == "button" then
+			local btnStyle = parent:GetAttribute("PiconBtnStyle") or style
+			local base = ButtonColorForStyle(btnStyle)
+			parent.BackgroundColor3 = base
+			ApplyButtonGradient(parent, base, btnStyle)
+		else
+			ApplySurfaceGradient(parent, strength)
+		end
 		end
 	end
 end
@@ -1242,19 +1253,23 @@ function Container:AddSlider(opts)
 		ZIndex = 2,
 	}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 	fill.Parent = track
+	fill:SetAttribute("PiconRole", "Accent")
 	ApplyAccentGradient(fill)
+	local knobStroke = New("UIStroke", { Color = fillColor, Thickness = 2, Transparency = 0.15 })
+	knobStroke:SetAttribute("PiconRole", "AccentStroke")
 	local knob = New("Frame", {
 		Size = UDim2.fromOffset(18, 18),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new((value - minV) / math.max(maxV - minV, 1e-6), 0, 0.5, 0),
-		BackgroundColor3 = Color3.fromRGB(240, 242, 248),
+		BackgroundColor3 = Color3.fromRGB(245, 246, 250),
 		BorderSizePixel = 0,
 		ZIndex = 3,
 	}, {
 		New("UICorner", { CornerRadius = UDim.new(1, 0) }),
-		New("UIStroke", { Color = fillColor, Thickness = 2, Transparency = 0.2 }),
+		knobStroke,
 	})
 	knob.Parent = trackWrap
+	track:SetAttribute("PiconRole", "Tertiary")
 	AttachTooltip(holder, opts.Tooltip)
 
 	-- Full-width invisible button for easy grabbing
@@ -2792,9 +2807,19 @@ function Picon.new(opts)
 				tab.label.Font = isActive and Picon.Theme.FontBold or Picon.Theme.Font
 			end
 			if tab.icon then
-				tab.icon.ImageColor3 = isActive and Picon.Theme.Accent or Picon.Theme.SubText
+				if isActive then
+					tab.icon:SetAttribute("PiconRole", "IconActive")
+					tab.icon.ImageColor3 = Picon.Theme.Accent
+				else
+					tab.icon:SetAttribute("PiconRole", "Icon")
+					tab.icon.ImageColor3 = Picon.Theme.SubText
+				end
+			end
+			if tab.accent then
+				tab.accent:SetAttribute("PiconRole", "Accent")
 			end
 		end
+		-- slider accents etc already handled via PiconRole in ApplyThemeToInstance
 		if self.PageTitle then
 			self.PageTitle.TextColor3 = Picon.Theme.Text
 		end
@@ -2802,8 +2827,12 @@ function Picon.new(opts)
 			self.TitleLabel.TextColor3 = Picon.Theme.Text
 		end
 		if self.MiniButtonInstance then
-			self.MiniButtonInstance.BackgroundColor3 = Picon.Theme.Secondary
-			ApplyButtonGradient(self.MiniButtonInstance, Picon.Theme.Secondary, "secondary")
+			local mc = LiftForTransparency(Picon.Theme.Secondary)
+			self.MiniButtonInstance.BackgroundColor3 = mc
+			if ApplyButtonGradient then
+				ApplyButtonGradient(self.MiniButtonInstance, mc, "secondary")
+			end
+			self.MiniButtonInstance.BackgroundTransparency = self._transparency or Picon.WindowTransparency or 0
 		end
 	end
 
@@ -2908,8 +2937,12 @@ function Picon.new(opts)
 			sidebar.BackgroundTransparency = self._transparency
 			titleBar.BackgroundTransparency = self._transparency
 		end
-		-- Mini button matches main GUI transparency
 		self.MiniButtonInstance.BackgroundTransparency = self._transparency
+		-- Re-tint surfaces so transparent mode does not look muddy
+		ApplyThemeToInstance(self.Instance)
+		if typeof(self._applyThemeExtra) == "function" then
+			pcall(function() self:_applyThemeExtra() end)
+		end
 	end
 
 	function self:SetMiniPosition(side)
