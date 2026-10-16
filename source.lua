@@ -681,6 +681,44 @@ function Container:AddDivider(opts)
 	return setmetatable({ Instance = line }, Element)
 end
 
+-- Two-column row helper inside a tab/container
+function Container:AddColumns(opts)
+	opts = opts or {}
+	local gap = opts.Gap or 12
+	local row = New("Frame", {
+		Name = "Columns",
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		LayoutOrder = opts.LayoutOrder or 0,
+	})
+	row.Parent = self.Content or self.Instance
+	New("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, gap),
+		HorizontalAlignment = Enum.HorizontalAlignment.Left,
+		VerticalAlignment = Enum.VerticalAlignment.Top,
+	}).Parent = row
+
+	local cols = {}
+	local n = opts.Count or 2
+	for i = 1, n do
+		local col = New("Frame", {
+			Name = "Col" .. i,
+			Size = UDim2.new(1 / n, -math.floor(gap * (n - 1) / n), 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			LayoutOrder = i,
+		})
+		col.Parent = row
+		ApplyAutoLayout(col, { Padding = 0, Spacing = opts.Spacing or 6 })
+		cols[i] = setmetatable({ Instance = col, Content = col }, Container)
+	end
+	return cols
+end
+
+
 function Container:AddSection(opts)
 	opts = opts or {}
 	local collapsed = opts.Collapsed == true
@@ -1788,22 +1826,26 @@ function Picon.Confirm(opts)
 end
 
 ------------------------------------------------------------
--- WINDOW
+-- WINDOW  (Neverlose-style: left sidebar + content)
 ------------------------------------------------------------
 local Window = setmetatable({}, Container)
 Window.__index = Window
+
+local SIDEBAR_W = 168
+local TOPBAR_H = 44
 
 function Picon.new(opts)
 	opts = opts or {}
 	local screenGui, root = EnsureRoot()
 
-	local size = opts.Size or Vector2.new(500, 420)
+	local size = opts.Size or Vector2.new(780, 480)
 	local position = opts.Position or Vector2.new(
 		Picon.BaseResolution.X / 2,
 		Picon.BaseResolution.Y / 2
 	)
 	local winTransparency = opts.Transparency
 	if winTransparency == nil then winTransparency = Picon.WindowTransparency end
+	local sidebarW = opts.SidebarWidth or SIDEBAR_W
 
 	local main = New("Frame", {
 		Name = opts.Name or "PiconWindow",
@@ -1824,40 +1866,152 @@ function Picon.new(opts)
 	local winScale = New("UIScale", { Scale = 0.96 })
 	winScale.Parent = main
 
-	local titleBar = New("Frame", {
-		Name = "TitleBar",
-		Size = UDim2.new(1, 0, 0, 40),
+	-- ===== LEFT SIDEBAR =====
+	local sidebar = New("Frame", {
+		Name = "Sidebar",
+		Size = UDim2.new(0, sidebarW, 1, 0),
 		BackgroundColor3 = Picon.Theme.Secondary,
 		BackgroundTransparency = winTransparency,
 		BorderSizePixel = 0,
+		ZIndex = 2,
 	})
-	titleBar.Parent = main
-	-- bottom edge of title bar (no rounded "card" look)
+	sidebar.Parent = main
+	New("Frame", {
+		Size = UDim2.new(0, 1, 1, 0),
+		Position = UDim2.new(1, -1, 0, 0),
+		BackgroundColor3 = Picon.Theme.Stroke,
+		BorderSizePixel = 0,
+		ZIndex = 3,
+	}).Parent = sidebar
+
+	-- Brand / title in sidebar
+	local brand = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 52),
+		BackgroundTransparency = 1,
+		ZIndex = 3,
+	})
+	brand.Parent = sidebar
+	local titleLabel = New("TextLabel", {
+		Name = "TitleLabel",
+		Size = UDim2.new(1, -16, 1, 0),
+		Position = UDim2.fromOffset(14, 0),
+		BackgroundTransparency = 1,
+		Text = opts.Title or "Picon",
+		TextColor3 = Picon.Theme.Text,
+		Font = Picon.Theme.FontBold,
+		TextSize = 16,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		ZIndex = 4,
+	})
+	titleLabel.Parent = brand
+	New("Frame", {
+		Size = UDim2.new(1, -24, 0, 1),
+		Position = UDim2.new(0, 12, 1, -1),
+		BackgroundColor3 = Picon.Theme.Stroke,
+		BorderSizePixel = 0,
+		ZIndex = 4,
+	}).Parent = brand
+
+	-- Nav list (scrollable)
+	local navScroll = New("ScrollingFrame", {
+		Name = "Nav",
+		Size = UDim2.new(1, 0, 1, -52),
+		Position = UDim2.fromOffset(0, 52),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 3,
+		ScrollBarImageColor3 = Picon.Theme.Stroke,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		ZIndex = 3,
+	})
+	navScroll.Parent = sidebar
+	New("UIListLayout", {
+		FillDirection = Enum.FillDirection.Vertical,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 2),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+	}).Parent = navScroll
+	New("UIPadding", {
+		PaddingTop = UDim.new(0, 8),
+		PaddingBottom = UDim.new(0, 10),
+		PaddingLeft = UDim.new(0, 8),
+		PaddingRight = UDim.new(0, 8),
+	}).Parent = navScroll
+
+	-- ===== RIGHT: TOP BAR + CONTENT =====
+	local right = New("Frame", {
+		Name = "Right",
+		Size = UDim2.new(1, -sidebarW, 1, 0),
+		Position = UDim2.fromOffset(sidebarW, 0),
+		BackgroundTransparency = 1,
+		ZIndex = 2,
+	})
+	right.Parent = main
+
+	local titleBar = New("Frame", {
+		Name = "TitleBar",
+		Size = UDim2.new(1, 0, 0, TOPBAR_H),
+		BackgroundColor3 = Picon.Theme.Background,
+		BackgroundTransparency = winTransparency,
+		BorderSizePixel = 0,
+		ZIndex = 5,
+	})
+	titleBar.Parent = right
 	New("Frame", {
 		Size = UDim2.new(1, 0, 0, 1),
 		Position = UDim2.new(0, 0, 1, -1),
 		BackgroundColor3 = Picon.Theme.Stroke,
 		BorderSizePixel = 0,
+		ZIndex = 6,
 	}).Parent = titleBar
 
-	local titleLabel = New("TextLabel", {
-		Size = UDim2.new(1, -52, 1, 0),
-		Position = UDim2.fromOffset(14, 0),
+	local pageTitle = New("TextLabel", {
+		Name = "PageTitle",
+		Size = UDim2.new(1, -120, 1, 0),
+		Position = UDim2.fromOffset(16, 0),
 		BackgroundTransparency = 1,
-		Text = opts.Title or "Picon Window",
+		Text = "",
 		TextColor3 = Picon.Theme.Text,
 		Font = Picon.Theme.FontBold,
-		TextSize = 17,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 6,
 	})
-	titleLabel.Parent = titleBar
+	pageTitle.Parent = titleBar
+
+	-- optional search in top bar
+	local searchBox
+	if opts.Search then
+		searchBox = New("TextBox", {
+			Name = "Search",
+			Size = UDim2.fromOffset(160, 28),
+			Position = UDim2.new(1, -210, 0.5, -14),
+			BackgroundColor3 = Picon.Theme.Tertiary,
+			TextColor3 = Picon.Theme.Text,
+			PlaceholderText = "Search...",
+			PlaceholderColor3 = Picon.Theme.SubText,
+			Text = "",
+			Font = Picon.Theme.Font,
+			TextSize = 13,
+			ClearTextOnFocus = false,
+			BorderSizePixel = 0,
+			ZIndex = 6,
+		}, {
+			New("UICorner", { CornerRadius = UDim.new(0, 4) }),
+			New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
+			New("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
+		})
+		searchBox.Parent = titleBar
+	end
 
 	local closeBtn
 	if opts.CanClose ~= false then
 		closeBtn = New("TextButton", {
 			Size = UDim2.fromOffset(28, 28),
-			Position = UDim2.new(1, -34, 0.5, -14),
-			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			Position = UDim2.new(1, -36, 0.5, -14),
 			BackgroundTransparency = 1,
 			Text = "×",
 			TextColor3 = Picon.Theme.SubText,
@@ -1865,6 +2019,7 @@ function Picon.new(opts)
 			TextSize = 20,
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
+			ZIndex = 7,
 		}, { New("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 		closeBtn.Parent = titleBar
 		closeBtn.MouseEnter:Connect(function()
@@ -1882,57 +2037,41 @@ function Picon.new(opts)
 		end)
 	end
 
-	-- Search bar (опционально)
-	local contentTop = 40
-	local searchBox
-	if opts.Search then
-		searchBox = New("TextBox", {
-			Name = "Search",
-			Size = UDim2.new(1, -28, 0, 32),
-			Position = UDim2.fromOffset(14, 46),
-			BackgroundColor3 = Picon.Theme.Tertiary,
-			TextColor3 = Picon.Theme.Text,
-			PlaceholderText = "Search...",
-			PlaceholderColor3 = Picon.Theme.SubText,
-			Text = "",
-			Font = Picon.Theme.Font,
-			TextSize = 14,
-			ClearTextOnFocus = false,
-			BorderSizePixel = 0,
-		}, {
-			New("UICorner", { CornerRadius = UDim.new(0, 4) }),
-			New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
-			New("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
-		})
-		searchBox.Parent = main
-		contentTop = 86
-	end
+	-- Pages host
+	local pagesHost = New("Frame", {
+		Name = "Pages",
+		Size = UDim2.new(1, 0, 1, -TOPBAR_H),
+		Position = UDim2.fromOffset(0, TOPBAR_H),
+		BackgroundTransparency = 1,
+		ZIndex = 2,
+	})
+	pagesHost.Parent = right
 
-	-- Tab bar placeholder
-	local tabBar
-	local tabContents = {}
-	local activeTab = nil
-
+	-- Default content page (when no tabs yet / fallback)
 	local content = New("ScrollingFrame", {
 		Name = "Content",
-		Size = UDim2.new(1, 0, 1, -contentTop),
-		Position = UDim2.fromOffset(0, contentTop),
+		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		ScrollBarThickness = 5,
+		ScrollBarThickness = 4,
 		ScrollBarImageColor3 = Picon.Theme.Stroke,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
+		Visible = true,
+		ZIndex = 2,
 	})
-	content.Parent = main
+	content.Parent = pagesHost
 	if opts.AutoLayout ~= false then
 		ApplyAutoLayout(content, opts)
 	end
 
 	local dragCleanup
+	local brandDragCleanup
 	if opts.Draggable ~= false then
+		-- drag from sidebar brand + top bar
 		dragCleanup = MakeDraggable(titleBar, main)
+		brandDragCleanup = MakeDraggable(brand, main)
 	end
 
 	-- MiniButton
@@ -1961,7 +2100,6 @@ function Picon.new(opts)
 		New("UIStroke", { Color = Picon.Theme.Stroke, Thickness = 1 }),
 	})
 	miniBtn.Parent = root
-	-- TextSize / IconSize подстраиваются под размер mini-кнопки
 	local autoTextSize = math.clamp(math.floor(math.min(miniSize.X, miniSize.Y) * 0.42), 10, 22)
 	local autoIcon = math.max(math.floor(math.min(miniSize.X, miniSize.Y) - 12), 12)
 	PopulateButtonVisual(miniBtn, {
@@ -1985,11 +2123,18 @@ function Picon.new(opts)
 		miniDragCleanup, miniWasDragged = MakeDraggable(miniBtn, miniBtn)
 	end
 
+	local tabContents = {}
+	local activeTab = nil
+
 	local self = setmetatable({
 		Instance = main,
 		Content = content,
 		TitleBar = titleBar,
 		TitleLabel = titleLabel,
+		PageTitle = pageTitle,
+		Sidebar = sidebar,
+		NavScroll = navScroll,
+		PagesHost = pagesHost,
 		ScreenGui = screenGui,
 		MiniButtonInstance = miniBtn,
 		IsOpen = false,
@@ -2000,17 +2145,19 @@ function Picon.new(opts)
 		_transparency = winTransparency,
 		_tabs = tabContents,
 		_searchBox = searchBox,
-		_contentTop = contentTop,
+		_sidebarW = sidebarW,
 	}, Window)
 
 	if dragCleanup then table.insert(self._cleanups, dragCleanup) end
+	if brandDragCleanup then table.insert(self._cleanups, brandDragCleanup) end
 	if miniDragCleanup then table.insert(self._cleanups, miniDragCleanup) end
 
-	-- Поиск: фильтрует детей Content по тексту
+	-- Search filters active page children
 	if searchBox then
 		searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 			local q = string.lower(searchBox.Text)
-			for _, child in ipairs(content:GetChildren()) do
+			local page = activeTab and activeTab.Content or content
+			for _, child in ipairs(page:GetChildren()) do
 				if child:IsA("GuiObject") and not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
 					if q == "" then
 						child.Visible = true
@@ -2065,7 +2212,8 @@ function Picon.new(opts)
 		self._transparency = math.clamp(t, 0, 1)
 		if self.IsOpen then
 			self.Instance.BackgroundTransparency = self._transparency
-			self.TitleBar.BackgroundTransparency = self._transparency
+			sidebar.BackgroundTransparency = self._transparency
+			titleBar.BackgroundTransparency = self._transparency
 		end
 		self.MiniButtonInstance.BackgroundTransparency = self._transparency
 	end
@@ -2086,81 +2234,147 @@ function Picon.new(opts)
 		)
 	end
 
-	-- Вкладки
+	-- Sidebar group label (non-clickable section header in nav)
+	function self:AddNavGroup(opts)
+		opts = opts or {}
+		local lbl = New("TextLabel", {
+			Size = UDim2.new(1, 0, 0, 22),
+			BackgroundTransparency = 1,
+			Text = string.upper(opts.Text or opts.Name or ""),
+			TextColor3 = Picon.Theme.SubText,
+			Font = Picon.Theme.FontBold,
+			TextSize = 11,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			LayoutOrder = opts.LayoutOrder or (#self._tabs * 10),
+			ZIndex = 4,
+		}, {
+			New("UIPadding", { PaddingLeft = UDim.new(0, 6) }),
+		})
+		lbl.Parent = navScroll
+		return lbl
+	end
+
+	-- Вкладки → пункты сайдбара
 	function self:AddTab(opts)
 		opts = opts or {}
 		local name = opts.Name or opts.Text or ("Tab" .. tostring(#self._tabs + 1))
-
-		if not tabBar then
-			tabBar = New("Frame", {
-				Name = "TabBar",
-				Size = UDim2.new(1, -28, 0, 36),
-				Position = UDim2.fromOffset(14, contentTop),
-				BackgroundTransparency = 1,
-				ZIndex = 5,
-			}, {
-				New("UIListLayout", {
-					FillDirection = Enum.FillDirection.Horizontal,
-					Padding = UDim.new(0, 6),
-					SortOrder = Enum.SortOrder.LayoutOrder,
-				}),
-			})
-			tabBar.Parent = main
-			contentTop = contentTop + 42
-			content.Position = UDim2.fromOffset(0, contentTop)
-			content.Size = UDim2.new(1, 0, 1, -contentTop)
-			self._contentTop = contentTop
-		end
+		local icon = opts.Icon -- optional Image string or unicode glyph via Text prefix
 
 		local page = New("ScrollingFrame", {
 			Name = "Tab_" .. name,
-			Size = UDim2.new(1, 0, 1, -contentTop),
-			Position = UDim2.fromOffset(0, contentTop),
+			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
-			ScrollBarThickness = 5,
+			ScrollBarThickness = 4,
 			ScrollBarImageColor3 = Picon.Theme.Stroke,
 			CanvasSize = UDim2.new(0, 0, 0, 0),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			ScrollingDirection = Enum.ScrollingDirection.Y,
 			Visible = false,
+			ZIndex = 2,
 		})
-		page.Parent = main
+		page.Parent = pagesHost
 		ApplyAutoLayout(page, opts)
 
+		-- Sidebar nav button
 		local tabBtn = New("TextButton", {
-			Size = UDim2.fromOffset(0, 30),
-			AutomaticSize = Enum.AutomaticSize.X,
+			Name = "Nav_" .. name,
+			Size = UDim2.new(1, 0, 0, 32),
 			BackgroundColor3 = Picon.Theme.Tertiary,
-			Text = "  " .. name .. "  ",
-			TextColor3 = Picon.Theme.SubText,
-			Font = Picon.Theme.FontBold,
-			TextSize = 13,
+			BackgroundTransparency = 1,
+			Text = "",
 			AutoButtonColor = false,
 			BorderSizePixel = 0,
-			LayoutOrder = #self._tabs + 1,
+			LayoutOrder = opts.LayoutOrder or (#self._tabs + 1) * 10,
+			ZIndex = 4,
 		}, { New("UICorner", { CornerRadius = UDim.new(0, 4) }) })
-		tabBtn.Parent = tabBar
+		tabBtn.Parent = navScroll
 
-		local tabObj = setmetatable({ Instance = page, Content = page, _btn = tabBtn }, Container)
-		table.insert(self._tabs, { name = name, page = page, btn = tabBtn, obj = tabObj })
+		local accentBar = New("Frame", {
+			Name = "Accent",
+			Size = UDim2.new(0, 3, 0, 18),
+			Position = UDim2.new(0, 0, 0.5, -9),
+			BackgroundColor3 = Picon.Theme.Accent,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ZIndex = 5,
+		}, { New("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+		accentBar.Parent = tabBtn
+
+		local labelText = name
+		if typeof(icon) == "string" and icon ~= "" and not string.find(icon, "rbxasset") then
+			-- unicode / emoji icon as prefix
+			labelText = icon .. "  " .. name
+		end
+
+		local navLabel = New("TextLabel", {
+			Size = UDim2.new(1, -14, 1, 0),
+			Position = UDim2.fromOffset(12, 0),
+			BackgroundTransparency = 1,
+			Text = labelText,
+			TextColor3 = Picon.Theme.SubText,
+			Font = Picon.Theme.Font,
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 5,
+		})
+		navLabel.Parent = tabBtn
+
+		if typeof(icon) == "string" and string.find(icon, "rbxasset") then
+			navLabel.Position = UDim2.fromOffset(34, 0)
+			navLabel.Size = UDim2.new(1, -40, 1, 0)
+			New("ImageLabel", {
+				Size = UDim2.fromOffset(16, 16),
+				Position = UDim2.new(0, 12, 0.5, -8),
+				BackgroundTransparency = 1,
+				Image = icon,
+				ImageColor3 = Picon.Theme.SubText,
+				ZIndex = 5,
+			}).Parent = tabBtn
+		end
+
+		local tabObj = setmetatable({ Instance = page, Content = page, _btn = tabBtn, _name = name }, Container)
+		table.insert(self._tabs, {
+			name = name,
+			page = page,
+			btn = tabBtn,
+			obj = tabObj,
+			accent = accentBar,
+			label = navLabel,
+		})
 
 		local function activate()
 			for _, t in ipairs(self._tabs) do
 				t.page.Visible = false
-				t.btn.BackgroundColor3 = Picon.Theme.Tertiary
-				t.btn.TextColor3 = Picon.Theme.SubText
+				t.btn.BackgroundTransparency = 1
+				t.accent.BackgroundTransparency = 1
+				t.label.TextColor3 = Picon.Theme.SubText
+				t.label.Font = Picon.Theme.Font
 			end
 			page.Visible = true
-			tabBtn.BackgroundColor3 = Picon.Theme.Accent
-			tabBtn.TextColor3 = Color3.new(1, 1, 1)
-			content.Visible = false -- скрываем основной content
+			content.Visible = false
+			tabBtn.BackgroundTransparency = 0
+			tabBtn.BackgroundColor3 = Picon.Theme.Tertiary
+			accentBar.BackgroundTransparency = 0
+			navLabel.TextColor3 = Picon.Theme.Text
+			navLabel.Font = Picon.Theme.FontBold
+			pageTitle.Text = name
 			activeTab = tabObj
 		end
 
+		tabBtn.MouseEnter:Connect(function()
+			if activeTab ~= tabObj then
+				tabBtn.BackgroundTransparency = 0.5
+				tabBtn.BackgroundColor3 = Picon.Theme.Tertiary
+			end
+		end)
+		tabBtn.MouseLeave:Connect(function()
+			if activeTab ~= tabObj then
+				tabBtn.BackgroundTransparency = 1
+			end
+		end)
 		tabBtn.MouseButton1Click:Connect(activate)
 
-		-- Первая вкладка активна
 		if #self._tabs == 1 then
 			activate()
 		end
@@ -2168,7 +2382,6 @@ function Picon.new(opts)
 		return tabObj
 	end
 
-	-- Не открываем GUI если только что тащили мини-кнопку
 	miniBtn.MouseButton1Click:Connect(function()
 		if miniWasDragged and miniWasDragged() then
 			return
